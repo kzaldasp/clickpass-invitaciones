@@ -1,0 +1,36 @@
+---
+interface Props {
+  titulo: string;
+  nota?: string;
+}
+
+const { titulo, nota } = Astro.props;
+---
+
+<section class="escena">
+  <div class="contenedor dress" data-anim="escala">
+    <h2 class="titulo-seccion">Código de vestimenta</h2>
+    <p class="dress__titulo">{titulo}</p>
+    {nota && <p class="dress__nota">{nota}</p>}
+  </div>
+</section>
+
+<style>
+  .dress {
+    text-align: center;
+  }
+
+  .dress__titulo {
+    margin-block: 0.4rem 0.8rem;
+    font-family: var(--f-titulo);
+    font-size: clamp(2rem, 9vw, 2.8rem);
+    color: var(--c-rojo);
+  }
+
+  .dress__nota {
+    margin: 0 auto;
+    max-width: 22rem;
+    color: var(--c-texto-suave);
+    text-wrap: balance;
+  }
+</style>

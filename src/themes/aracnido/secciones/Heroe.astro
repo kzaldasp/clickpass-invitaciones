@@ -1,0 +1,174 @@
+---
+/**
+ * La escena principal: el heroe baja colgado de su hilo mientras haces scroll.
+ *
+ * El hilo es un path SVG real. El heroe no hace translateY: recorre ese path
+ * con MotionPath, asi que se balancea siguiendo la curva. El hilo se dibuja
+ * con DrawSVG al mismo ritmo, de modo que siempre nace justo sobre el.
+ */
+interface Props {
+  ilustracion: string;
+  /** Texto que aparece cuando el heroe llega abajo. */
+  mensaje?: string;
+}
+
+const { ilustracion, mensaje } = Astro.props;
+---
+
+<section class="heroe" data-heroe>
+  <svg
+    class="heroe__hilo"
+    viewBox="0 0 200 900"
+    preserveAspectRatio="xMidYMin meet"
+    fill="none"
+    aria-hidden="true"
+  >
+    {/* La curva S es lo que convierte una caida recta en un descenso con peso. */}
+    <path
+      data-hilo
+      d="M100 0 C132 170 68 330 104 500 C128 618 86 742 100 900"
+      stroke="var(--c-hilo, rgba(243,240,234,0.55))"
+      stroke-width="2.5"
+      stroke-linecap="round"
+    />
+  </svg>
+
+  <img
+    class="heroe__figura"
+    data-figura
+    src={ilustracion}
+    alt=""
+    width="260"
+    height="360"
+    decoding="async"
+  />
+
+  {
+    mensaje && (
+      <p class="heroe__mensaje" data-anim="sube">
+        {mensaje}
+      </p>
+    )
+  }
+</section>
+
+<script>
+  import { gsap, movimientoReducido } from '../../../lib/escena';
+  import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
+  import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
+
+  gsap.registerPlugin(MotionPathPlugin, DrawSVGPlugin);
+
+  function montarHeroe() {
+    const seccion = document.querySelector<HTMLElement>('[data-heroe]');
+    if (!seccion) return;
+
+    const hilo = seccion.querySelector<SVGPathElement>('[data-hilo]');
+    const figura = seccion.querySelector<HTMLElement>('[data-figura]');
+    if (!hilo || !figura) return;
+
+    // Sin movimiento: el heroe se queda colgado al final del hilo, quieto.
+    if (movimientoReducido()) {
+      gsap.set(figura, { opacity: 1, top: '46%', xPercent: -50, left: '50%' });
+      gsap.set(hilo, { opacity: 1 });
+      return;
+    }
+
+    const linea = gsap.timeline({
+      scrollTrigger: {
+        trigger: seccion,
+        start: 'top top',
+        end: 'bottom bottom',
+        // scrub ata la animacion al dedo del usuario: el heroe baja tanto
+        // como baje el scroll, y sube si el usuario sube.
+        scrub: 0.8,
+      },
+    });
+
+    linea
+      .fromTo(hilo, { drawSVG: '0%' }, { drawSVG: '100%', ease: 'none' }, 0)
+      .fromTo(
+        figura,
+        { opacity: 1 },
+        {
+          ease: 'none',
+          motionPath: {
+            path: hilo,
+            align: hilo,
+            alignOrigin: [0.5, 0.02], // la mano agarra el hilo, no el pecho
+            autoRotate: 12, // se inclina con la curva, como si el hilo tirara de el
+          },
+        },
+        0,
+      );
+
+    // Balanceo propio, independiente del scroll: sin esto parece una calcomania
+    // deslizandose. Con esto parece que cuelga.
+    gsap.to(figura, {
+      rotation: '+=5',
+      duration: 2.4,
+      ease: 'sine.inOut',
+      yoyo: true,
+      repeat: -1,
+      transformOrigin: '50% 0%',
+    });
+  }
+
+  document.addEventListener('invitacion:abierta', montarHeroe, { once: true });
+</script>
+
+<style>
+  .heroe {
+    position: relative;
+    /* Alto extra: es el recorrido que el heroe tiene para bajar. */
+    min-height: 200vh;
+    padding-block-start: 2rem;
+  }
+
+  .heroe__hilo {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    width: 100%;
+    /* El hilo acaba antes del final de la seccion: el ultimo tramo queda
+       libre para el mensaje, que si no lo tapa el heroe al terminar de bajar. */
+    height: 68%;
+    z-index: 0;
+  }
+
+  .heroe__figura {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: 2;
+    width: clamp(9rem, 44vw, 15rem);
+    height: auto;
+    /* La sombra sigue el contorno del PNG recortado, no su caja. */
+    filter: drop-shadow(0 18px 26px rgba(0, 0, 0, 0.45));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .heroe {
+      min-height: 92vh;
+    }
+
+    .heroe__hilo {
+      height: 50%;
+    }
+  }
+
+  .heroe__mensaje {
+    position: absolute;
+    inset-block-end: 8vh;
+    inset-inline: 0;
+    z-index: 3;
+    margin: 0;
+    padding-inline: 2rem;
+    font-family: var(--f-titulo);
+    font-size: clamp(1.6rem, 7vw, 2.4rem);
+    line-height: 1.15;
+    text-align: center;
+    text-wrap: balance;
+    color: var(--c-oro);
+  }
+</style>

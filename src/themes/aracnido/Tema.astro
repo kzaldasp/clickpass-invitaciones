@@ -1,0 +1,112 @@
+---
+import Invitacion from '../../layouts/Invitacion.astro';
+import Portada from './secciones/Portada.astro';
+import Heroe from './secciones/Heroe.astro';
+import CuentaRegresiva from './secciones/CuentaRegresiva.astro';
+import Lugares from './secciones/Lugares.astro';
+import DressCode from './secciones/DressCode.astro';
+import Pases from './secciones/Pases.astro';
+import Cierre from './secciones/Cierre.astro';
+
+import { fechaLarga, textoPases } from '../../lib/eventos';
+import { ruta } from '../../lib/rutas';
+import type { Evento, Invitado } from '../../lib/eventos';
+
+interface Props {
+  evento: Evento;
+  invitado?: Invitado;
+}
+
+const { evento, invitado } = Astro.props;
+const d = evento.data;
+
+/**
+ * Ilustraciones del tema. Cuando lleguen los PNG recortados basta con cambiar
+ * la extension aqui: ninguna seccion conoce estas rutas.
+ */
+const ILUSTRACIONES = {
+  heroeColgado: ruta('/ilustraciones/aracnido/heroe-colgado.svg'),
+};
+
+const fechaTexto = fechaLarga(d.fecha, d.zonaHoraria);
+const pases = textoPases(d, invitado);
+
+const saludo = invitado ? `${invitado.nombre}, estás invitado` : d.tipo;
+const titulo = `${d.festejado.nombre} · ${d.tipo}`;
+const descripcion = d.frase ?? `${saludo} — ${fechaTexto}`;
+---
+
+<Invitacion
+  titulo={titulo}
+  descripcion={descripcion}
+  tema="aracnido"
+  borrador={d.estado === 'borrador'}
+  musica={d.musica?.archivo && ruta(d.musica.archivo)}
+>
+  <Portada
+    tipo={d.tipo}
+    nombre={d.festejado.nombre}
+    edad={d.festejado.edad}
+    frase={d.frase}
+    invitado={invitado?.nombre}
+  />
+
+  <main class="aracnido">
+    <Heroe
+      ilustracion={ILUSTRACIONES.heroeColgado}
+      mensaje={d.frase ?? '¡Te espero en la fiesta!'}
+    />
+
+    <CuentaRegresiva fechaISO={d.fecha.toISOString()} fechaTexto={fechaTexto} />
+
+    <Lugares lugares={d.lugares} />
+
+    {d.dressCode && <DressCode titulo={d.dressCode.titulo} nota={d.dressCode.nota} />}
+
+    <Pases
+      invitado={invitado?.nombre}
+      pases={pases}
+      nota={invitado?.nota}
+      tipo={d.tipo}
+    />
+
+    <Cierre despedida={d.despedida} anfitriones={d.anfitriones} />
+  </main>
+</Invitacion>
+
+<style is:global>
+  /* --- Fuentes del tema --------------------------------------------------- */
+  @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@400;700;800&display=swap');
+
+  /* --- Paleta ------------------------------------------------------------- */
+  html[data-tema='aracnido'] {
+    --c-fondo: #0a0a14;
+    --c-rojo: #e23636;
+    --c-rojo-osc: #9c1d1d;
+    --c-azul: #1b2a6b;
+    --c-azul-cl: #2e4da7;
+    --c-oro: #f5c451;
+    --c-texto: #f3f0ea;
+    --c-texto-suave: rgba(243, 240, 234, 0.72);
+    --c-hilo: rgba(243, 240, 234, 0.4);
+    --c-hilo-anillo: rgba(243, 240, 234, 0.24);
+
+    --f-titulo: 'Luckiest Guy', system-ui, sans-serif;
+    --f-cuerpo: 'Nunito', system-ui, -apple-system, sans-serif;
+  }
+
+  /* El fondo no es plano: dos luces frias sostienen toda la narracion. */
+  html[data-tema='aracnido'] body {
+    background:
+      radial-gradient(circle at 12% 8%, rgba(46, 77, 167, 0.3) 0%, transparent 42%),
+      radial-gradient(circle at 88% 72%, rgba(156, 29, 29, 0.24) 0%, transparent 46%),
+      var(--c-fondo);
+  }
+
+  .titulo-seccion {
+    margin-block-end: 1.6rem;
+    font-size: clamp(1.7rem, 8vw, 2.3rem);
+    text-align: center;
+    color: var(--c-texto);
+  }
+</style>

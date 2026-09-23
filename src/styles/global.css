@@ -1,0 +1,131 @@
+/* ==========================================================================
+   Base compartida por todas las invitaciones.
+   Los temas solo redefinen las variables --c-* y --f-* dentro de su seccion.
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* El scroll suave real lo maneja Lenis. Esto es el fallback sin JS. */
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--f-cuerpo);
+  color: var(--c-texto);
+  background: var(--c-fondo);
+  line-height: 1.6;
+  /* Estas invitaciones se leen en vertical, en una mano. */
+  overflow-x: clip;
+}
+
+img,
+svg,
+picture {
+  display: block;
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--f-titulo);
+  font-weight: 400;
+  line-height: 1.05;
+  margin: 0;
+  /* Los titulos de display no necesitan el tracking por defecto. */
+  letter-spacing: 0.01em;
+}
+
+p {
+  margin: 0 0 1em;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* --- Bloqueo de scroll mientras la portada esta cerrada -------------------- */
+
+body[data-gate='cerrado'] {
+  overflow: hidden;
+  /* iOS ignora overflow:hidden en body si no se fija la altura. */
+  height: 100dvh;
+}
+
+/* --- Estados iniciales de animacion ---------------------------------------
+   Solo se aplican cuando hay JS. Sin JS el contenido se ve completo: una
+   invitacion que no carga es un cliente perdido, no un detalle estetico.
+   -------------------------------------------------------------------------- */
+
+.js [data-anim] {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.js [data-anim='sube'] {
+  transform: translateY(2.5rem);
+}
+
+.js [data-anim='escala'] {
+  transform: scale(0.88);
+}
+
+/* --- Accesibilidad: respetar a quien pide menos movimiento ----------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .js [data-anim] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- Utilidades ------------------------------------------------------------ */
+
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.contenedor {
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+/* Cada seccion es una escena del guion: ocupa pantalla y respira. */
+.escena {
+  position: relative;
+  padding-block: clamp(4rem, 14vh, 7rem);
+}

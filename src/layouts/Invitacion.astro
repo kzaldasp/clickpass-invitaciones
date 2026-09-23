@@ -1,0 +1,155 @@
+---
+import '../styles/global.css';
+import { ruta } from '../lib/rutas';
+
+interface Props {
+  titulo: string;
+  descripcion: string;
+  /** Imagen para la tarjeta de WhatsApp. Ruta absoluta desde /public. */
+  imagen?: string;
+  /** Nombre de la carpeta del tema. Deja el hook [data-tema] para estilos. */
+  tema: string;
+  /** Un borrador no debe aparecer en buscadores ni tratarse como definitivo. */
+  borrador?: boolean;
+  /** Ruta del audio de fondo, si el evento lo trae. */
+  musica?: string;
+}
+
+const {
+  titulo,
+  descripcion,
+  imagen = '/og-default.jpg',
+  tema,
+  borrador = false,
+  musica,
+} = Astro.props;
+
+const urlCanonica = new URL(Astro.url.pathname, Astro.site);
+const urlImagen = new URL(ruta(imagen), Astro.site);
+---
+
+<!doctype html>
+<html lang="es" data-tema={tema}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titulo}</title>
+    <meta name="description" content={descripcion} />
+    <link rel="canonical" href={urlCanonica} />
+
+    {/* No hacemos SEO, pero si nos importa como se ve el link al pegarlo en WhatsApp. */}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={titulo} />
+    <meta property="og:description" content={descripcion} />
+    <meta property="og:image" content={urlImagen} />
+    <meta property="og:url" content={urlCanonica} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {borrador && <meta name="robots" content="noindex, nofollow" />}
+
+    {/* La barra del navegador movil se tine del color del tema. */}
+    <meta name="theme-color" content="#0a0a14" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    {/* Marca JS antes del primer pintado: evita el parpadeo de los elementos que entran animados. */}
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+  </head>
+
+  <body data-gate="cerrado">
+    {
+      borrador && (
+        <p class="cinta-borrador">
+          Borrador — aun no compartas este link
+        </p>
+      )
+    }
+
+    <slot />
+
+    {
+      musica && (
+        <audio id="musica-fondo" src={musica} loop preload="none" />
+      )
+    }
+
+    <script>
+      import {
+        iniciarScroll,
+        revelarPorScroll,
+        revelarEnCascada,
+        destruirEscena,
+      } from '../lib/escena';
+
+      function arrancarInvitacion() {
+        iniciarScroll();
+        revelarPorScroll();
+        revelarEnCascada();
+
+        // Cada seccion monta sus propias animaciones al oir esto. Asi nada se
+        // calcula mientras el scroll sigue bloqueado por la portada, que es
+        // cuando ScrollTrigger mide posiciones equivocadas.
+        document.dispatchEvent(new CustomEvent('invitacion:abierta'));
+      }
+
+      const boton = document.querySelector<HTMLButtonElement>('[data-gate-abrir]');
+      const portada = document.querySelector<HTMLElement>('[data-gate-portada]');
+      const audio = document.querySelector<HTMLAudioElement>('#musica-fondo');
+
+      if (boton && portada) {
+        boton.addEventListener(
+          'click',
+          () => {
+            portada.dataset.saliendo = 'true';
+            document.body.dataset.gate = 'abierto';
+
+            // El audio solo puede arrancar dentro de un gesto real del usuario:
+            // los navegadores moviles bloquean cualquier reproduccion automatica.
+            audio?.play().catch(() => {
+              /* El usuario tiene el silencio activo. No es un error que deba romper nada. */
+            });
+
+            // Esperamos a que la portada termine de salir para medir posiciones.
+            portada.addEventListener(
+              'transitionend',
+              () => {
+                portada.hidden = true;
+                arrancarInvitacion();
+              },
+              { once: true },
+            );
+          },
+          { once: true },
+        );
+      } else {
+        // Sin portada (vista de prueba, o tema sin gate) arrancamos de inmediato.
+        document.body.dataset.gate = 'abierto';
+        arrancarInvitacion();
+      }
+
+      // Astro reemplaza el DOM al navegar; sin esto los triggers viejos se acumulan.
+      document.addEventListener('astro:before-swap', destruirEscena);
+    </script>
+
+    <style>
+      .cinta-borrador {
+        position: fixed;
+        inset-block-start: 0;
+        inset-inline: 0;
+        z-index: 100;
+        margin: 0;
+        padding: 0.4rem 1rem;
+        background: #f5b301;
+        color: #221a00;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-align: center;
+        text-transform: uppercase;
+      }
+    </style>
+  </body>
+</html>

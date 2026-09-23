@@ -1,0 +1,192 @@
+---
+import Telarana from '../Telarana.astro';
+
+/**
+ * La portada es una puerta, no una seccion.
+ *
+ * Resuelve tres cosas a la vez: da el gesto de usuario que los navegadores
+ * moviles exigen para reproducir audio, deja precargar las ilustraciones antes
+ * del primer scroll, y marca un inicio claro para la narracion.
+ */
+interface Props {
+  tipo: string;
+  nombre: string;
+  edad?: number;
+  frase?: string;
+  /** Nombre del invitado si abrio su link nominal. */
+  invitado?: string;
+}
+
+const { tipo, nombre, edad, frase, invitado } = Astro.props;
+---
+
+<div class="portada" data-gate-portada>
+  <span class="portada__web portada__web--izq">
+    <Telarana esquina="arriba-izq" />
+  </span>
+  <span class="portada__web portada__web--der">
+    <Telarana esquina="arriba-der" />
+  </span>
+
+  <div class="portada__centro">
+    <p class="portada__saludo">
+      {invitado ? invitado : tipo}
+    </p>
+
+    <h1 class="portada__nombre" data-titulo-portada>{nombre}</h1>
+
+    {edad && <p class="portada__edad">{edad} años</p>}
+
+    {frase && <p class="portada__frase">{frase}</p>}
+
+    <button class="portada__boton" type="button" data-gate-abrir>
+      Abrir invitación
+    </button>
+
+    <p class="portada__nota">🔊 Activa el sonido para vivirla completa</p>
+  </div>
+</div>
+
+<script>
+  import { gsap, movimientoReducido } from '../../../lib/escena';
+  import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
+  import { SplitText } from 'gsap/SplitText';
+
+  gsap.registerPlugin(DrawSVGPlugin, SplitText);
+
+  const portada = document.querySelector<HTMLElement>('[data-gate-portada]');
+  const titulo = document.querySelector<HTMLElement>('[data-titulo-portada]');
+
+  if (portada && titulo && !movimientoReducido()) {
+    const hilos = portada.querySelectorAll<SVGPathElement>('[data-telarana] .hilo');
+
+    // SplitText envuelve cada letra en un span y lo revierte solo al terminar,
+    // para no dejar basura en el DOM ni romper lectores de pantalla.
+    const partido = SplitText.create(titulo, { type: 'chars', aria: 'auto' });
+
+    const entrada = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+    entrada
+      .from(hilos, {
+        drawSVG: '0%',
+        duration: 1.4,
+        stagger: 0.03,
+        ease: 'power2.inOut',
+      })
+      .from(
+        partido.chars,
+        { opacity: 0, y: 40, rotateX: -60, duration: 0.7, stagger: 0.04 },
+        '-=0.9',
+      )
+      .from(
+        '.portada__edad, .portada__frase, .portada__boton, .portada__nota',
+        { opacity: 0, y: 20, duration: 0.6, stagger: 0.1 },
+        '-=0.3',
+      )
+      .add(() => partido.revert());
+  }
+</script>
+
+<style>
+  .portada {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 2rem 1.5rem;
+    background:
+      radial-gradient(circle at 50% 18%, var(--c-azul) 0%, transparent 62%),
+      var(--c-fondo);
+    opacity: 1;
+    transition:
+      opacity 0.7s ease,
+      transform 0.7s ease;
+  }
+
+  .portada[data-saliendo='true'] {
+    opacity: 0;
+    /* Sale hacia el fondo, no hacia arriba: se siente como entrar, no como pasar. */
+    transform: scale(1.08);
+  }
+
+  .portada__web {
+    position: absolute;
+    inset-block-start: -1.5rem;
+    opacity: 0.85;
+    /* El span solo posiciona: no debe capturar toques sobre el boton. */
+    pointer-events: none;
+  }
+
+  .portada__web--izq {
+    inset-inline-start: -1.5rem;
+  }
+
+  .portada__web--der {
+    inset-inline-end: -1.5rem;
+  }
+
+  .portada__centro {
+    position: relative;
+    z-index: 1;
+    max-width: 22rem;
+    text-align: center;
+  }
+
+  .portada__saludo {
+    margin-block-end: 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--c-oro);
+  }
+
+  .portada__nombre {
+    font-size: clamp(3.4rem, 19vw, 6rem);
+    color: var(--c-texto);
+    text-shadow:
+      0 0 26px rgba(226, 54, 54, 0.45),
+      0 6px 0 var(--c-rojo-osc);
+  }
+
+  .portada__edad {
+    margin-block: 0.4rem 1rem;
+    font-family: var(--f-titulo);
+    font-size: 1.5rem;
+    color: var(--c-rojo);
+  }
+
+  .portada__frase {
+    margin-block-end: 2rem;
+    font-size: 1rem;
+    text-wrap: balance;
+    color: var(--c-texto-suave);
+  }
+
+  .portada__boton {
+    padding: 0.95rem 2.4rem;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(140deg, var(--c-rojo) 0%, var(--c-rojo-osc) 100%);
+    color: #fff;
+    font-family: var(--f-titulo);
+    font-size: 1.1rem;
+    letter-spacing: 0.04em;
+    box-shadow: 0 12px 28px rgba(226, 54, 54, 0.4);
+    transition: transform 0.2s ease;
+    /* Area tactil comoda para un pulgar, que es como se abre esto. */
+    min-height: 3rem;
+  }
+
+  .portada__boton:active {
+    transform: scale(0.96);
+  }
+
+  .portada__nota {
+    margin-block-start: 1.2rem;
+    margin-block-end: 0;
+    font-size: 0.78rem;
+    color: var(--c-texto-suave);
+  }
+</style>

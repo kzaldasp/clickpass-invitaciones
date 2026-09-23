@@ -1,0 +1,24 @@
+---
+import Aracnido from '../themes/aracnido/Tema.astro';
+import type { Evento, Invitado } from '../lib/eventos';
+
+interface Props {
+  evento: Evento;
+  invitado?: Invitado;
+}
+
+const { evento, invitado } = Astro.props;
+
+/**
+ * Registro de temas. Astro necesita los imports estaticos, asi que cada tema
+ * nuevo se agrega aqui y en el enum de content.config.ts. Son las dos unicas
+ * lineas que cambian al sumar un tema.
+ */
+const temas = {
+  aracnido: Aracnido,
+} as const;
+
+const Elegido = temas[evento.data.tema];
+---
+
+<Elegido evento={evento} invitado={invitado} />
