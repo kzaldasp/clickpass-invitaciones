@@ -1,0 +1,137 @@
+---
+interface Props {
+  texto?: string;
+  link?: string;
+  datosBancarios?: string;
+  lluviaSobres?: boolean;
+}
+
+const { texto, link, datosBancarios, lluviaSobres } = Astro.props;
+const hay = texto || link || datosBancarios || lluviaSobres;
+const linkValido = link && /^https?:\/\//.test(link) ? link : undefined;
+---
+
+{
+  hay && (
+    <section class="escena regalos">
+      <div class="contenedor regalos__caja">
+        <svg class="regalos__caja-icono" viewBox="0 0 80 80" aria-hidden="true" data-anim="escala">
+          <g fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round">
+            <rect x="12" y="32" width="56" height="40" rx="2" />
+            <rect x="8" y="22" width="64" height="12" rx="2" />
+            <path d="M40 22v50" />
+            <path d="M40 22c-6-12-20-14-20-5 0 5 10 6 20 5zM40 22c6-12 20-14 20-5 0 5-10 6-20 5z" />
+          </g>
+        </svg>
+
+        <h2 class="x-titulo" data-anim="sube">
+          <span class="x-caps">Un detalle</span>
+          <span class="x-script">para mí</span>
+        </h2>
+
+        {texto && <p class="regalos__texto" data-anim="sube">{texto}</p>}
+
+        {linkValido && (
+          <a class="x-boton" href={linkValido} target="_blank" rel="noopener noreferrer" data-anim="sube">
+            Ver mesa de regalos
+          </a>
+        )}
+
+        {datosBancarios && (
+          <div class="regalos__banco" data-anim="sube">
+            <p class="x-caps regalos__banco-titulo">Transferencia</p>
+            <p class="regalos__banco-datos">{datosBancarios}</p>
+            <button type="button" class="x-boton x-boton--linea" data-x-copiar={datosBancarios}>
+              Copiar datos
+            </button>
+          </div>
+        )}
+
+        {lluviaSobres && (
+          <p class="regalos__lluvia" data-anim="sube">
+            <span class="x-script">Lluvia de sobres</span>
+            <span>Habrá un buzón especial en la recepción.</span>
+          </p>
+        )}
+      </div>
+    </section>
+  )
+}
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-x-copiar]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.xCopiar!);
+        const antes = b.textContent;
+        b.textContent = '¡Copiado!';
+        setTimeout(() => (b.textContent = antes), 1800);
+      } catch {
+        /* Sin permiso: los datos siguen visibles. */
+      }
+    });
+  });
+</script>
+
+<style>
+  .regalos__caja {
+    display: grid;
+    justify-items: center;
+    gap: 1.1rem;
+    text-align: center;
+  }
+
+  .regalos__caja-icono {
+    width: 4.2rem;
+    color: var(--x-oro);
+  }
+
+  .regalos__caja :global(.x-titulo) {
+    margin-bottom: 0.4rem;
+  }
+
+  .regalos__texto {
+    max-width: 21rem;
+    margin: 0;
+    font-family: var(--x-f-serif);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--x-suave);
+  }
+
+  .regalos__banco {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    width: min(21rem, 100%);
+    padding: 1.4rem 1.2rem;
+    border: 1px solid color-mix(in srgb, var(--x-oro) 55%, transparent);
+    background: color-mix(in srgb, var(--x-rubor) 45%, transparent);
+  }
+
+  .regalos__banco-titulo {
+    margin: 0;
+    font-size: 0.7rem;
+  }
+
+  .regalos__banco-datos {
+    margin: 0;
+    font-family: var(--x-f-serif);
+    font-size: 1.1rem;
+    line-height: 1.5;
+    white-space: pre-line;
+    color: var(--x-tinta);
+  }
+
+  .regalos__lluvia {
+    display: grid;
+    gap: 0.2rem;
+    margin: 0.4rem 0 0;
+    color: var(--x-suave);
+  }
+
+  .regalos__lluvia .x-script {
+    font-size: 2rem;
+    color: var(--x-rosa-osc);
+  }
+</style>

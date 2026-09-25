@@ -1,0 +1,102 @@
+---
+/**
+ * Ramita con flores de cinco petalos y hojas finas, en acuarela (#x-acuarela).
+ * Geometria calculada sobre una Bezier. En la Plantilla: el tallo se dibuja,
+ * las hojas brotan y las flores se abren girando.
+ */
+interface Props {
+  variante?: 1 | 2 | 3;
+  espejo?: boolean;
+}
+
+const { variante = 1, espejo = false } = Astro.props;
+
+type P = [number, number];
+const curvas: Record<number, [P, P, P, P]> = {
+  1: [[10, 290], [70, 210], [110, 110], [225, 30]],
+  2: [[20, 300], [30, 190], [160, 180], [215, 45]],
+  3: [[10, 240], [80, 235], [160, 130], [265, 95]],
+};
+const [p0, p1, p2, p3] = curvas[variante];
+const punto = (t: number): P => {
+  const u = 1 - t;
+  return [
+    u ** 3 * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t ** 3 * p3[0],
+    u ** 3 * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t ** 3 * p3[1],
+  ];
+};
+const tangente = (t: number) => {
+  const [a, b] = [punto(Math.max(0, t - 0.01)), punto(Math.min(1, t + 0.01))];
+  return (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
+};
+
+let semilla = variante * 131;
+const azar = () => ((semilla = (semilla * 9301 + 49297) % 233280) / 233280);
+
+// Hojas finas y alargadas a lo largo del tallo.
+const hojas = Array.from({ length: 10 }, (_, i) => {
+  const t = 0.1 + (i / 9) * 0.8;
+  const [x, y] = punto(t);
+  const lado = i % 2 === 0 ? 1 : -1;
+  return {
+    x,
+    y,
+    angulo: tangente(t) + lado * (42 + azar() * 16),
+    escala: 0.7 + Math.sin(t * Math.PI) * 0.5,
+    opacidad: 0.45 + azar() * 0.35,
+  };
+});
+
+// Flores: tres en el recorrido y una en la punta, cada una con su tamano.
+const flores = [0.34, 0.62, 0.84, 1].map((t, i) => {
+  const [x, y] = punto(t);
+  const lado = i % 2 === 0 ? 1 : -1;
+  const desvio = t < 1 ? 16 : 0;
+  const a = ((tangente(t) + lado * 90) * Math.PI) / 180;
+  return {
+    x: x + Math.cos(a) * desvio,
+    y: y + Math.sin(a) * desvio,
+    r: t === 1 ? 15 : 9 + azar() * 5,
+    giro: azar() * 72,
+    tono: i % 2 ? 'var(--x-rosa)' : 'var(--x-rubor-flor)',
+  };
+});
+
+const tallo = `M${p0[0]},${p0[1]} C${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]}`;
+const HOJA = 'M0,0 C9,-5 26,-6 38,0 C26,6 9,5 0,0Z';
+const PETALO = 'M0,0 C-7,-6 -6,-17 0,-19 C6,-17 7,-6 0,0Z';
+---
+
+<svg class="flores" viewBox="0 0 280 310" aria-hidden="true" data-flores style={espejo ? 'transform: scaleX(-1)' : undefined}>
+  <g filter="url(#x-acuarela)">
+    <path class="flores__tallo" d={tallo} fill="none" stroke="var(--x-hoja-osc)" stroke-width="1.6" stroke-linecap="round" />
+    {
+      hojas.map((h) => (
+        <g transform={`translate(${h.x.toFixed(1)} ${h.y.toFixed(1)}) rotate(${h.angulo.toFixed(1)}) scale(${h.escala.toFixed(2)})`}>
+          <path class="flores__hoja" d={HOJA} fill="var(--x-hoja)" fill-opacity={h.opacidad.toFixed(2)} />
+        </g>
+      ))
+    }
+    {
+      flores.map((f) => (
+        <g transform={`translate(${f.x.toFixed(1)} ${f.y.toFixed(1)}) scale(${(f.r / 19).toFixed(2)})`}>
+          <g class="flores__flor" transform={`rotate(${f.giro.toFixed(0)})`}>
+            {[0, 72, 144, 216, 288].map((g) => (
+              <path d={PETALO} transform={`rotate(${g})`} fill={f.tono} fill-opacity="0.8" />
+            ))}
+            <circle r="4" fill="var(--x-oro)" fill-opacity="0.9" />
+          </g>
+        </g>
+      ))
+    }
+  </g>
+</svg>
+
+<style>
+  .flores {
+    display: block;
+    width: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+</style>

@@ -194,12 +194,16 @@ invitado está en otra zona).
 | Plantilla | Para | Qué la hace especial |
 |---|---|---|
 | `jardin` | Boda, aniversario | Acuarela botánica: sobre con lacre que se abre en 3D, ramas que se dibujan, hojas que caen, fotos con telón y parallax, save the date, mesa de regalos (extras: link, datos bancarios, lluvia de sobres, hashtag, historia). Paletas salvia, terracota y azul polvo. |
+| `rosa` | XV años, cumpleaños | Sobria y femenina: tarjeta de dos puertas con sello de cera que se abren, flores que florecen, mariposas en vuelo, destellos dorados, itinerario con hilo dorado que se dibuja con el scroll, padres y padrinos, palabras de la quinceañera, vals. Paletas rosa empolvado, lila, champaña y azul cielo. |
 | `aracnido` | Fiesta infantil, cumpleaños | Héroe que baja por su telaraña con el scroll. |
 
 En `jardin`, `galeria[0]` va en el arco de la presentación, `[1]` en "Nuestra
 historia" y `[2]` en el cierre. Si faltan, en borrador y vista previa se ve el
 hueco "Aquí va su foto"; publicada, la sección se oculta. Las fotos de la demo
-son de Unsplash (ver `public/demo/jardin/CREDITOS.md`).
+son de Unsplash (ver `public/demo/jardin/CREDITOS.md`). `rosa` usa el mismo
+esquema de tres fotos (`public/demo/xv/CREDITOS.md`).
+
+Las portadas del catálogo se regeneran con `node scripts/portada-<plantilla>.mjs`.
 
 ### Reutilizar, personalizar y versionar
 

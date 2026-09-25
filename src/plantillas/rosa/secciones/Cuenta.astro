@@ -1,0 +1,116 @@
+---
+import AgregarCalendario from '../../compartidas/AgregarCalendario.astro';
+import type { EventoVista } from '../../tipos';
+
+interface Props {
+  evento: EventoVista;
+}
+
+const { evento } = Astro.props;
+const unidades = [
+  ['dias', 'Días'],
+  ['horas', 'Horas'],
+  ['minutos', 'Min'],
+  ['segundos', 'Seg'],
+] as const;
+---
+
+<section class="escena cuenta">
+  <div class="contenedor cuenta__caja">
+    <h2 class="x-titulo" data-anim="sube">
+      <span class="x-caps">Solo faltan</span>
+      <span class="x-script">para mi gran noche</span>
+    </h2>
+
+    <div class="cuenta__reloj" data-x-cuenta={evento.fecha.toISOString()} data-anim="escala">
+      {
+        unidades.map(([clave, etiqueta]) => (
+          <div class="cuenta__caja-num">
+            <span class="cuenta__numero" data-unidad={clave}>--</span>
+            <span class="x-caps cuenta__etiqueta">{etiqueta}</span>
+          </div>
+        ))
+      }
+    </div>
+    <p class="x-script cuenta__hoy" data-x-hoy hidden>¡Hoy es el gran día!</p>
+
+    <div class="cuenta__calendario" data-anim="sube">
+      <AgregarCalendario evento={evento} />
+    </div>
+  </div>
+</section>
+
+<script>
+  const reloj = document.querySelector<HTMLElement>('[data-x-cuenta]');
+  if (reloj) {
+    const objetivo = new Date(reloj.dataset.xCuenta!).getTime();
+    const campo = (k: string) => reloj.querySelector<HTMLElement>(`[data-unidad="${k}"]`)!;
+    const c = { d: campo('dias'), h: campo('horas'), m: campo('minutos'), s: campo('segundos') };
+    const pintar = (el: HTMLElement, v: number) => {
+      const t = String(v).padStart(2, '0');
+      if (el.textContent !== t) el.textContent = t;
+    };
+    const tic = () => {
+      const resta = objetivo - Date.now();
+      if (resta <= 0) {
+        reloj.hidden = true;
+        document.querySelector<HTMLElement>('[data-x-hoy]')!.hidden = false;
+        return;
+      }
+      const s = Math.floor(resta / 1000);
+      pintar(c.d, Math.floor(s / 86400));
+      pintar(c.h, Math.floor((s % 86400) / 3600));
+      pintar(c.m, Math.floor((s % 3600) / 60));
+      pintar(c.s, s % 60);
+      setTimeout(tic, 1000 - (Date.now() % 1000));
+    };
+    tic();
+  }
+</script>
+
+<style>
+  .cuenta__caja {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .cuenta__reloj {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    width: min(21rem, 100%);
+  }
+
+  .cuenta__caja-num {
+    display: grid;
+    justify-items: center;
+    gap: 0.3rem;
+    padding: 0.9rem 0.2rem 0.7rem;
+    border: 1px solid color-mix(in srgb, var(--x-oro) 55%, transparent);
+    border-radius: 999px 999px 0.5rem 0.5rem;
+    background: color-mix(in srgb, var(--x-rubor) 55%, transparent);
+  }
+
+  .cuenta__numero {
+    font-family: var(--x-f-serif);
+    font-size: 2.1rem;
+    line-height: 1;
+    color: var(--x-rosa-osc);
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  .cuenta__etiqueta {
+    font-size: 0.55rem;
+  }
+
+  .cuenta__hoy {
+    font-size: 2.6rem;
+    color: var(--x-rosa-osc);
+  }
+
+  .cuenta__calendario {
+    margin-top: 2rem;
+    color: var(--x-rosa-osc);
+  }
+</style>

@@ -1,0 +1,107 @@
+---
+import QrEntrada from '../../compartidas/QrEntrada.astro';
+import type { InvitadoVista } from '../../tipos';
+
+interface Props {
+  invitado?: InvitadoVista;
+  linkQr?: string;
+}
+
+const { invitado, linkQr } = Astro.props;
+---
+
+{
+  invitado && (
+    <section class="escena pase">
+      <div class="contenedor">
+        <div class="pase__tarjeta" data-anim="escala">
+          <p class="x-caps pase__para">Esta invitación es para</p>
+          <p class="x-script pase__nombre">{invitado.nombre}</p>
+          <div class="pase__lugares">
+            <span class="pase__numero">{invitado.pases}</span>
+            <span class="x-caps">{invitado.pases === 1 ? 'lugar reservado' : 'lugares reservados'}</span>
+          </div>
+          {invitado.nota && <p class="pase__nota">{invitado.nota}</p>}
+          {linkQr && (
+            <div class="pase__qr">
+              <QrEntrada link={linkQr} />
+              <p class="x-caps pase__qr-texto">Presenta este código en la entrada</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .pase__tarjeta {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    padding: 2.6rem 1.5rem 2.2rem;
+    border-radius: 999px 999px 0.6rem 0.6rem;
+    background: color-mix(in srgb, var(--x-papel) 80%, white);
+    box-shadow: 0 24px 50px -26px rgb(120 60 70 / 0.45);
+    text-align: center;
+  }
+
+  .pase__tarjeta::before {
+    content: '';
+    position: absolute;
+    inset: 0.6rem;
+    border: 1px solid color-mix(in srgb, var(--x-oro) 70%, transparent);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .pase__para {
+    margin: 2.2rem 0 0;
+    font-size: 0.68rem;
+  }
+
+  .pase__nombre {
+    margin: 0;
+    font-size: clamp(2.4rem, 12vw, 3rem);
+    line-height: 1.15;
+    color: var(--x-rosa-osc);
+  }
+
+  .pase__lugares {
+    display: grid;
+    justify-items: center;
+    margin-top: 0.4rem;
+  }
+
+  .pase__numero {
+    font-family: var(--x-f-serif);
+    font-size: 3.4rem;
+    line-height: 1;
+    color: var(--x-tinta);
+    font-variant-numeric: lining-nums;
+  }
+
+  .pase__lugares .x-caps {
+    font-size: 0.66rem;
+  }
+
+  .pase__nota {
+    margin: 0.3rem 0 0;
+    font-style: italic;
+    color: var(--x-suave);
+  }
+
+  .pase__qr {
+    --qr-tamano: 8.5rem;
+    display: grid;
+    justify-items: center;
+    gap: 0.6rem;
+    margin-top: 1.2rem;
+  }
+
+  .pase__qr-texto {
+    margin: 0;
+    font-size: 0.58rem;
+  }
+</style>

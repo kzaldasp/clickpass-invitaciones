@@ -1,6 +1,7 @@
 import type { Manifiesto } from './tipos';
 import { manifiesto as aracnido } from './aracnido/manifiesto';
 import { manifiesto as jardin } from './jardin/manifiesto';
+import { manifiesto as rosa } from './rosa/manifiesto';
 
 /**
  * Registro de MANIFIESTOS (solo datos). Lo usan admin, panel y catalogo.
@@ -12,7 +13,7 @@ import { manifiesto as jardin } from './jardin/manifiesto';
  *
  * Sumar una plantilla = una linea aqui y otra en ./componentes.ts.
  */
-const MANIFIESTOS: Manifiesto[] = [jardin, aracnido];
+const MANIFIESTOS: Manifiesto[] = [jardin, rosa, aracnido];
 
 export function plantillas(): Manifiesto[] {
   return MANIFIESTOS;

@@ -1,0 +1,142 @@
+---
+/** Lugares como linea de tiempo vertical: el hilo dorado se dibuja con el scroll. */
+import EtiquetaZona from '../../compartidas/EtiquetaZona.astro';
+import { horaLegible } from '../../../lib/fechas';
+import type { ContenidoEvento } from '../../../lib/contenido';
+
+interface Props {
+  lugares: ContenidoEvento['lugares'];
+  zona: string;
+  vals?: string;
+}
+
+const { lugares, zona, vals } = Astro.props;
+---
+
+<section class="escena itinerario">
+  <div class="contenedor">
+    <h2 class="x-titulo" data-anim="sube">
+      <span class="x-caps">Itinerario</span>
+      <span class="x-script">de la noche</span>
+    </h2>
+
+    <ol class="linea" data-x-linea>
+      <span class="linea__hilo" aria-hidden="true"></span>
+      {
+        lugares.map((l) => (
+          <li class="parada" data-anim="sube">
+            <span class="parada__punto" aria-hidden="true" />
+            <p class="parada__hora">
+              {horaLegible(l.hora)} <EtiquetaZona zona={zona} class="parada__zona" />
+            </p>
+            <p class="x-caps parada__titulo">{l.titulo}</p>
+            <p class="parada__nombre">{l.nombre}</p>
+            <p class="parada__direccion">{l.direccion}</p>
+            {l.mapa && (
+              <a class="x-boton x-boton--linea" href={l.mapa} target="_blank" rel="noopener noreferrer">
+                Cómo llegar
+              </a>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+
+    {
+      vals && (
+        <p class="itinerario__vals" data-anim="sube">
+          <span class="x-caps">Mi vals</span>
+          <span class="x-script">{vals}</span>
+        </p>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .linea {
+    position: relative;
+    display: grid;
+    gap: 2.6rem;
+    margin: 0;
+    padding: 0 0 0 2.2rem;
+    list-style: none;
+  }
+
+  .linea__hilo {
+    position: absolute;
+    top: 0.6rem;
+    bottom: 0.6rem;
+    left: 0.45rem;
+    width: 1px;
+    background: var(--x-oro);
+    transform-origin: top;
+  }
+
+  .parada {
+    position: relative;
+    display: grid;
+    justify-items: start;
+    gap: 0.2rem;
+  }
+
+  .parada__punto {
+    position: absolute;
+    top: 0.55rem;
+    left: -2.2rem;
+    width: 0.95rem;
+    aspect-ratio: 1;
+    border: 1px solid var(--x-oro);
+    border-radius: 50%;
+    background: var(--x-papel);
+    box-shadow: inset 0 0 0 3px var(--x-papel), inset 0 0 0 10px var(--x-rosa);
+  }
+
+  .parada__hora {
+    margin: 0;
+    font-family: var(--x-f-serif);
+    font-size: 1.9rem;
+    line-height: 1.1;
+    color: var(--x-rosa-osc);
+  }
+
+  .parada__hora :global(.parada__zona) {
+    font-size: 0.75rem;
+    font-style: italic;
+    color: var(--x-suave);
+  }
+
+  .parada__titulo {
+    margin: 0;
+    font-size: 0.72rem;
+  }
+
+  .parada__nombre {
+    margin: 0.2rem 0 0;
+    font-family: var(--x-f-serif);
+    font-size: 1.3rem;
+    color: var(--x-tinta);
+  }
+
+  .parada__direccion {
+    margin: 0 0 0.6rem;
+    color: var(--x-suave);
+  }
+
+  .itinerario__vals {
+    display: grid;
+    justify-items: center;
+    gap: 0.2rem;
+    margin: 3rem 0 0;
+    text-align: center;
+  }
+
+  .itinerario__vals .x-caps {
+    font-size: 0.7rem;
+  }
+
+  .itinerario__vals .x-script {
+    font-size: 2rem;
+    color: var(--x-rosa-osc);
+  }
+</style>

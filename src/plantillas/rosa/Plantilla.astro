@@ -1,0 +1,377 @@
+---
+/**
+ * Rosa: XV anos sobrios y femeninos. Guion:
+ *   tarjeta de dos puertas con sello -> presentacion (tiara, nombre, foto en
+ *   arco con destellos) -> reserva la fecha + padres y padrinos -> unas
+ *   palabras (foto) -> cuenta regresiva -> itinerario -> dress code ->
+ *   regalos -> pase con QR -> confirmacion -> cierre.
+ *
+ * Fotos: galeria[0] arco, [1] "unas palabras", [2] cierre. Sin foto: hueco en
+ * borrador y demo; publicada, la seccion se oculta.
+ */
+import Invitacion from '../../layouts/Invitacion.astro';
+import Confirmacion from '../compartidas/Confirmacion.astro';
+import Portada from './secciones/Portada.astro';
+import Presentacion from './secciones/Presentacion.astro';
+import SaveTheDate from './secciones/SaveTheDate.astro';
+import Historia from './secciones/Historia.astro';
+import Cuenta from './secciones/Cuenta.astro';
+import Itinerario from './secciones/Itinerario.astro';
+import DressCode from './secciones/DressCode.astro';
+import Regalos from './secciones/Regalos.astro';
+import Pase from './secciones/Pase.astro';
+import Cierre from './secciones/Cierre.astro';
+import Mariposa from './Mariposa.astro';
+
+import { fechaPartes } from '../../lib/fechas';
+import { POR_DEFECTO } from '../../lib/config';
+import { manifiesto } from './manifiesto';
+import type { PropsPlantilla } from '../tipos';
+
+type Props = PropsPlantilla;
+
+const { evento, invitado, confirmacion } = Astro.props;
+const d = evento.contenido;
+const x = d.extras as Record<string, unknown>;
+const texto = (k: string) => (typeof x[k] === 'string' && (x[k] as string).trim() ? (x[k] as string).trim() : undefined);
+
+const partes = fechaPartes(evento.fecha, evento.zonaHoraria);
+const hora24 = new Intl.DateTimeFormat(POR_DEFECTO.locale, {
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+  timeZone: evento.zonaHoraria,
+}).format(evento.fecha);
+const mesNumero = new Intl.DateTimeFormat('en-GB', { month: '2-digit', timeZone: evento.zonaHoraria }).format(evento.fecha);
+const fechaNumerica = `${partes.dia} · ${mesNumero} · ${partes.anio}`;
+
+const hueco = evento.estado === 'borrador' || confirmacion.modo === 'demo';
+const [foto1, foto2, foto3] = d.galeria;
+const padrinos = (texto('padrinos') ?? '')
+  .split('\n')
+  .map((p) => p.trim())
+  .filter(Boolean);
+
+const preset = manifiesto.presets?.find((p) => p.id === evento.preset);
+const titulo = `${d.festejado.nombre} · ${d.tipo}`;
+const descripcion = invitado
+  ? `${invitado.nombre}, quiero que seas parte de mi noche especial.`
+  : (d.frase ?? `${partes.diaSemana} ${partes.dia} de ${partes.mes} de ${partes.anio}`);
+---
+
+<Invitacion
+  titulo={titulo}
+  descripcion={descripcion}
+  imagen={foto1 ?? manifiesto.portada}
+  tema="rosa"
+  colorTema={manifiesto.colorTema}
+  variables={preset?.variables}
+  borrador={evento.estado === 'borrador'}
+  musica={d.musica?.archivo}
+>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="x-acuarela" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="3" result="ruido" />
+      <feDisplacementMap in="SourceGraphic" in2="ruido" scale="3" />
+    </filter>
+  </svg>
+
+  <Portada nombre={d.festejado.nombre} tipo={d.tipo} fecha={fechaNumerica} invitado={invitado?.nombre} />
+
+  {/* Mariposas que cruzan la pantalla detras del contenido. */}
+  <div class="x-mariposas" aria-hidden="true">
+    <span class="x-mariposa" data-x-mariposa><Mariposa /></span>
+    <span class="x-mariposa" data-x-mariposa><Mariposa tono="var(--x-oro)" /></span>
+    <span class="x-mariposa" data-x-mariposa><Mariposa tono="var(--x-rosa-osc)" /></span>
+  </div>
+
+  <main class="rosa">
+    <Presentacion
+      tipo={d.tipo}
+      nombre={d.festejado.nombre}
+      fecha={fechaNumerica}
+      frase={d.frase}
+      foto={foto1}
+      hueco={hueco}
+    />
+
+    <SaveTheDate
+      diaSemana={partes.diaSemana}
+      dia={partes.dia}
+      mes={partes.mes}
+      anio={partes.anio}
+      hora={`${hora24} hrs`}
+      zona={evento.zonaHoraria}
+      anfitriones={d.anfitriones}
+      padrinos={padrinos}
+    />
+
+    <Historia foto={foto2} mensaje={texto('mensaje')} nombre={d.festejado.nombre} hueco={hueco} />
+
+    <Cuenta evento={evento} />
+
+    <Itinerario lugares={d.lugares} zona={evento.zonaHoraria} vals={texto('vals')} />
+
+    {d.dressCode && <DressCode titulo={d.dressCode.titulo} nota={d.dressCode.nota} />}
+
+    <Regalos
+      texto={texto('regalosTexto')}
+      link={texto('regalosLink')}
+      datosBancarios={texto('datosBancarios')}
+      lluviaSobres={x.lluviaSobres === true}
+    />
+
+    <Pase invitado={invitado} linkQr={invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}` : undefined} />
+
+    <section class="escena">
+      <div class="contenedor rosa-confirmacion" data-anim="sube">
+        <Confirmacion confirmacion={confirmacion} invitado={invitado} zonaHoraria={evento.zonaHoraria} titulo="¿Me acompañas?" />
+      </div>
+    </section>
+
+    <Cierre nombre={d.festejado.nombre} despedida={d.despedida} hashtag={texto('hashtag')} foto={foto3} hueco={hueco} />
+  </main>
+</Invitacion>
+
+<script>
+  import { gsap, ScrollTrigger, movimientoReducido } from '../../lib/escena';
+  import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
+  import { SplitText } from 'gsap/SplitText';
+
+  gsap.registerPlugin(DrawSVGPlugin, SplitText, ScrollTrigger);
+
+  document.addEventListener('invitacion:abierta', () => {
+    if (movimientoReducido()) return;
+    const main = document.querySelector<HTMLElement>('.rosa');
+    if (!main) return;
+
+    // Flores: tallo, hojas y luego cada flor se abre girando.
+    main.querySelectorAll<SVGSVGElement>('[data-flores]').forEach((ramo) => {
+      gsap
+        .timeline({ scrollTrigger: { trigger: ramo, start: 'top 90%', once: true } })
+        .from(ramo.querySelectorAll('.flores__tallo'), { drawSVG: '0%', duration: 1.3, ease: 'power2.inOut' })
+        .from(
+          ramo.querySelectorAll('.flores__hoja'),
+          { scale: 0, transformOrigin: '0% 50%', duration: 0.5, stagger: 0.04, ease: 'back.out(2)' },
+          '-=0.9',
+        )
+        .from(
+          ramo.querySelectorAll('.flores__flor'),
+          { scale: 0, rotate: -120, transformOrigin: '50% 50%', duration: 1, stagger: 0.14, ease: 'back.out(1.7)' },
+          '-=0.6',
+        );
+    });
+
+    // El nombre aparece letra por letra, con un leve desenfoque.
+    main.querySelectorAll<HTMLElement>('[data-x-split]').forEach((el) => {
+      const partido = SplitText.create(el, { type: 'chars', aria: 'auto' });
+      gsap.from(partido.chars, {
+        opacity: 0,
+        y: 24,
+        filter: 'blur(8px)',
+        duration: 1,
+        stagger: 0.06,
+        ease: 'power3.out',
+        scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+        onComplete: () => partido.revert(),
+      });
+    });
+
+    // Fotos: se abren desde el centro, como las puertas de la portada.
+    main.querySelectorAll<HTMLElement>('[data-x-foto]').forEach((marco) => {
+      const img = marco.querySelector('img');
+      gsap.fromTo(
+        marco,
+        { clipPath: 'inset(0% 50% 0% 50%)' },
+        {
+          clipPath: 'inset(0% 0% 0% 0%)',
+          duration: 1.5,
+          ease: 'power4.inOut',
+          scrollTrigger: { trigger: marco, start: 'top 85%', once: true },
+          onComplete: () => gsap.set(marco, { clearProps: 'clipPath' }),
+        },
+      );
+      if (img) {
+        gsap.fromTo(
+          img,
+          { yPercent: -12, scale: 1.1 },
+          { yPercent: 0, scale: 1, ease: 'none', scrollTrigger: { trigger: marco, start: 'top bottom', end: 'bottom top', scrub: true } },
+        );
+      }
+    });
+
+    // El hilo dorado del itinerario se dibuja siguiendo el scroll.
+    const linea = main.querySelector<HTMLElement>('[data-x-linea]');
+    const hilo = linea?.querySelector('.linea__hilo');
+    if (linea && hilo) {
+      gsap.fromTo(
+        hilo,
+        { scaleY: 0 },
+        { scaleY: 1, ease: 'none', scrollTrigger: { trigger: linea, start: 'top 75%', end: 'bottom 60%', scrub: true } },
+      );
+    }
+
+    // Mariposas: cruzan la pantalla con un vuelo ondulado y vuelven a empezar.
+    document.querySelectorAll<HTMLElement>('[data-x-mariposa]').forEach((m, i) => {
+      const volar = () => {
+        const desdeIzq = Math.random() > 0.5;
+        const ancho = window.innerWidth;
+        const alto = window.innerHeight;
+        gsap.set(m, {
+          x: desdeIzq ? -60 : ancho + 20,
+          y: gsap.utils.random(alto * 0.15, alto * 0.85),
+          rotation: desdeIzq ? 20 : -20,
+          scaleX: desdeIzq ? 1 : -1,
+          opacity: 0,
+        });
+        gsap
+          .timeline({ onComplete: volar, delay: gsap.utils.random(2, 7) + i * 2.5 })
+          .to(m, { opacity: 0.9, duration: 0.8 })
+          .to(m, { x: desdeIzq ? ancho + 60 : -80, duration: gsap.utils.random(9, 14), ease: 'none' }, 0)
+          .to(m, { y: `+=${gsap.utils.random(-120, 120)}`, duration: 2.2, ease: 'sine.inOut', yoyo: true, repeat: 4 }, 0);
+      };
+      volar();
+    });
+  });
+</script>
+
+<style is:global>
+  @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Allura&display=swap');
+
+  html[data-tema='rosa'] {
+    --x-papel: #fbf6f4;
+    --x-rubor: #f4e3e1;
+    --x-rubor-flor: #f1cfd0;
+    --x-rosa: #d7a1a6;
+    --x-rosa-osc: #a2626b;
+    --x-oro: #bf9d62;
+    --x-hoja: #b9c1a8;
+    --x-hoja-osc: #8c957a;
+    --x-tinta: #4a3a3d;
+    --x-suave: #8b7b7d;
+    --x-f-serif: 'Bodoni Moda', 'Didot', 'Times New Roman', serif;
+    --x-f-script: 'Allura', 'Snell Roundhand', cursive;
+
+    --x-fondo-papel:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .3 0 0 0 0 .32 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse at 50% 0%, #fffaf8 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--x-rubor) 60%, transparent) 0%, transparent 55%),
+      var(--x-papel);
+
+    --c-fondo: var(--x-papel);
+    --c-texto: var(--x-tinta);
+    --f-cuerpo: var(--x-f-serif);
+    --f-titulo: var(--x-f-serif);
+  }
+
+  html[data-tema='rosa'] body {
+    background: var(--x-fondo-papel);
+    background-attachment: fixed;
+    font-size: 1.02rem;
+  }
+
+  html[data-tema='rosa'] .x-caps {
+    font-family: var(--x-f-serif);
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--x-suave);
+  }
+
+  html[data-tema='rosa'] .x-script {
+    font-family: var(--x-f-script);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  html[data-tema='rosa'] .x-titulo {
+    display: grid;
+    justify-items: center;
+    margin-bottom: 2.4rem;
+    text-align: center;
+  }
+
+  html[data-tema='rosa'] .x-titulo .x-caps {
+    font-size: 0.8rem;
+  }
+
+  html[data-tema='rosa'] .x-titulo .x-script {
+    font-size: clamp(2.8rem, 14vw, 3.6rem);
+    line-height: 1.05;
+    color: var(--x-rosa-osc);
+  }
+
+  html[data-tema='rosa'] .x-boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.9rem;
+    padding: 0.6rem 1.8rem;
+    border: 1px solid var(--x-rosa-osc);
+    border-radius: 999px;
+    background: var(--x-rosa-osc);
+    color: #fff;
+    font-family: var(--x-f-serif);
+    font-size: 0.72rem;
+    letter-spacing: 0.24em;
+    text-decoration: none;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  html[data-tema='rosa'] .x-boton--linea {
+    background: transparent;
+    color: var(--x-rosa-osc);
+  }
+
+  html[data-tema='rosa'] .x-mariposas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  html[data-tema='rosa'] .x-mariposa {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2.2rem;
+    opacity: 0;
+  }
+
+  html[data-tema='rosa'] .rosa {
+    position: relative;
+    z-index: 1;
+  }
+
+  html[data-tema='rosa'] .rosa .escena {
+    padding-block: clamp(3.5rem, 11vh, 6rem);
+  }
+
+  html[data-tema='rosa'] .rosa-confirmacion {
+    --conf-fondo: color-mix(in srgb, var(--x-papel) 75%, white);
+    --conf-texto: var(--x-tinta);
+    --conf-suave: var(--x-suave);
+    --conf-acento: var(--x-rosa-osc);
+    --conf-sobre-acento: #fff;
+    --conf-borde: color-mix(in srgb, var(--x-oro) 55%, transparent);
+    --conf-radio: 0.5rem;
+    --conf-fuente-titulo: var(--x-f-script);
+  }
+
+  html[data-tema='rosa'] .rosa-confirmacion .conf__titulo {
+    font-size: clamp(2.6rem, 12vw, 3.2rem);
+    font-weight: 400;
+    color: var(--x-rosa-osc);
+  }
+
+  html[data-tema='rosa'] .rosa-confirmacion .conf__boton {
+    font-family: var(--x-f-serif);
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+</style>

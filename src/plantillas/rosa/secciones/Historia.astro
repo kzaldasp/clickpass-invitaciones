@@ -1,0 +1,69 @@
+---
+import Foto from '../Foto.astro';
+
+interface Props {
+  foto?: string;
+  mensaje?: string;
+  nombre: string;
+  hueco: boolean;
+}
+
+const { foto, mensaje, nombre, hueco } = Astro.props;
+---
+
+{
+  (foto || hueco) && (
+    <section class="historia">
+      <div class="historia__foto">
+        <Foto src={foto} forma="rect" hueco={hueco} alt="" />
+      </div>
+      {mensaje && (
+        <div class="contenedor historia__texto">
+          <p class="x-script historia__antes" data-anim="sube">Unas palabras</p>
+          <p class="historia__mensaje" data-anim="sube">{mensaje}</p>
+          <p class="x-script historia__firma" data-anim="sube">{nombre}</p>
+        </div>
+      )}
+    </section>
+  )
+}
+
+<style>
+  .historia {
+    display: grid;
+    gap: 2rem;
+    padding-block: 2rem 4rem;
+  }
+
+  .historia__foto {
+    width: min(100%, 34rem);
+    margin-inline: auto;
+  }
+
+  .historia__texto {
+    text-align: center;
+  }
+
+  .historia__antes {
+    margin: 0;
+    font-size: 2.4rem;
+    color: var(--x-rosa-osc);
+  }
+
+  .historia__mensaje {
+    max-width: 22rem;
+    margin: 0.5rem auto 0;
+    font-family: var(--x-f-serif);
+    font-size: 1.2rem;
+    font-style: italic;
+    line-height: 1.55;
+    color: var(--x-tinta);
+    text-wrap: balance;
+  }
+
+  .historia__firma {
+    margin: 0.8rem 0 0;
+    font-size: 2rem;
+    color: var(--x-oro);
+  }
+</style>

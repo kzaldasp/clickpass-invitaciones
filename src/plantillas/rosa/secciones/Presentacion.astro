@@ -1,0 +1,124 @@
+---
+import Flores from '../Flores.astro';
+import Corona from '../Corona.astro';
+import Foto from '../Foto.astro';
+
+interface Props {
+  tipo: string;
+  nombre: string;
+  fecha: string;
+  frase?: string;
+  foto?: string;
+  hueco: boolean;
+}
+
+const { tipo, nombre, fecha, frase, foto, hueco } = Astro.props;
+---
+
+<section class="escena presentacion">
+  <div class="contenedor presentacion__caja">
+    <div data-anim="escala"><Corona nombre={nombre} /></div>
+    <p class="x-script presentacion__tipo" data-anim="sube">{tipo}</p>
+    <h1 class="presentacion__nombre" data-x-split>{nombre}</h1>
+    <p class="x-caps presentacion__fecha" data-anim="sube">{fecha}</p>
+
+    <div class="presentacion__foto" data-anim="sube">
+      <span class="presentacion__flores presentacion__flores--izq"><Flores variante={3} /></span>
+      <Foto src={foto} forma="arco" hueco={hueco} alt={`Foto de ${nombre}`} />
+      <span class="presentacion__flores presentacion__flores--der"><Flores variante={1} espejo /></span>
+      {[1, 2, 3, 4, 5].map((i) => <span class="destello" style={`--i:${i}`} aria-hidden="true" />)}
+    </div>
+
+    {frase && <p class="presentacion__frase" data-anim="sube">“{frase}”</p>}
+  </div>
+</section>
+
+<style>
+  .presentacion__caja {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    text-align: center;
+  }
+
+  .presentacion__tipo {
+    margin: 0.6rem 0 0;
+    font-size: clamp(2.6rem, 13vw, 3.4rem);
+    color: var(--x-rosa-osc);
+  }
+
+  .presentacion__nombre {
+    margin: 0;
+    font-family: var(--x-f-serif);
+    max-width: 100%;
+    font-size: clamp(2rem, 10vw, 3.6rem);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    overflow-wrap: anywhere;
+    line-height: 1.05;
+    text-transform: uppercase;
+    color: var(--x-tinta);
+  }
+
+  .presentacion__fecha {
+    margin: 0.5rem 0 2rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.4em;
+  }
+
+  .presentacion__foto {
+    position: relative;
+    width: min(18rem, 76vw);
+  }
+
+  .presentacion__flores {
+    position: absolute;
+    z-index: 2;
+    width: 9.5rem;
+  }
+
+  .presentacion__flores--izq {
+    bottom: -2rem;
+    left: -3.4rem;
+    transform: rotate(-10deg);
+  }
+
+  .presentacion__flores--der {
+    top: -1.8rem;
+    right: -3.4rem;
+    transform: rotate(16deg);
+  }
+
+  /* Destellos dorados de cuatro puntas que titilan alrededor de la foto. */
+  .destello {
+    position: absolute;
+    z-index: 3;
+    width: 0.9rem;
+    aspect-ratio: 1;
+    background: var(--x-oro);
+    clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+    animation: titilar 2.6s ease-in-out infinite;
+    animation-delay: calc(var(--i) * -0.55s);
+  }
+
+  .destello:nth-of-type(1) { top: 12%; left: -8%; }
+  .destello:nth-of-type(2) { top: 4%; right: 8%; width: 0.6rem; }
+  .destello:nth-of-type(3) { top: 46%; right: -9%; }
+  .destello:nth-of-type(4) { bottom: 18%; left: -12%; width: 0.55rem; }
+  .destello:nth-of-type(5) { bottom: -4%; right: 18%; width: 0.75rem; }
+
+  @keyframes titilar {
+    0%, 100% { opacity: 0.15; transform: scale(0.6) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1) rotate(45deg); }
+  }
+
+  .presentacion__frase {
+    max-width: 19rem;
+    margin: 3rem 0 0;
+    font-family: var(--x-f-serif);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--x-suave);
+    text-wrap: balance;
+  }
+</style>

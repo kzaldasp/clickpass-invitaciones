@@ -1,0 +1,62 @@
+---
+/** Codigo de vestimenta con un vestido de gala en linea fina. */
+interface Props {
+  titulo: string;
+  nota?: string;
+}
+
+const { titulo, nota } = Astro.props;
+---
+
+<section class="escena dress">
+  <div class="contenedor dress__caja">
+    <p class="x-caps dress__antes" data-anim="sube">Código de vestimenta</p>
+    <h2 class="x-script dress__titulo" data-anim="sube">{titulo}</h2>
+
+    <svg class="dress__vestido" viewBox="0 0 100 130" aria-hidden="true" data-anim="escala">
+      <g fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M38 6 C40 14 44 18 50 18 C56 18 60 14 62 6" />
+        <path d="M38 6 C34 16 36 30 40 40 L60 40 C64 30 66 16 62 6" />
+        <path d="M40 40 C36 60 20 90 10 124 L90 124 C80 90 64 60 60 40" />
+        <path d="M40 40 Q50 46 60 40" />
+        <path d="M26 88 C40 96 60 96 74 88 M18 108 C38 118 62 118 82 108" stroke-opacity="0.5" />
+      </g>
+    </svg>
+
+    {nota && <p class="dress__nota" data-anim="sube">{nota}</p>}
+  </div>
+</section>
+
+<style>
+  .dress__caja {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .dress__antes {
+    margin: 0;
+    font-size: 0.78rem;
+  }
+
+  .dress__titulo {
+    margin: 0.2rem 0 1.4rem;
+    font-size: clamp(3rem, 15vw, 4rem);
+    font-weight: 400;
+    color: var(--x-rosa-osc);
+  }
+
+  .dress__vestido {
+    width: 6.5rem;
+    color: var(--x-rosa-osc);
+  }
+
+  .dress__nota {
+    margin: 1.4rem 0 0;
+    max-width: 19rem;
+    font-family: var(--x-f-serif);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--x-suave);
+  }
+</style>

@@ -1,0 +1,243 @@
+---
+/**
+ * Portada: una tarjeta de dos puertas cerrada con un sello de cera rosa. Al
+ * tocarla, los textos se van, las puertas giran hacia afuera y detras aparece
+ * la invitacion. Los hijos solo usan @keyframes: el layout espera el
+ * `transitionend` de la portada, y una transition en un hijo lo adelantaria.
+ */
+import Flores from '../Flores.astro';
+import Corona from '../Corona.astro';
+
+interface Props {
+  nombre: string;
+  tipo: string;
+  fecha: string;
+  invitado?: string;
+}
+
+const { nombre, tipo, fecha, invitado } = Astro.props;
+---
+
+<div class="portada" data-gate-portada>
+  <div class="puerta puerta--izq" aria-hidden="true">
+    <span class="puerta__marco"></span>
+    <span class="puerta__flores puerta__flores--arriba"><Flores variante={1} /></span>
+  </div>
+  <div class="puerta puerta--der" aria-hidden="true">
+    <span class="puerta__marco"></span>
+    <span class="puerta__flores puerta__flores--abajo"><Flores variante={2} espejo /></span>
+  </div>
+
+  <div class="portada__textos">
+    <p class="x-caps portada__antes" data-x-entra>{invitado ? 'Una invitación para' : 'Estás invitado a'}</p>
+    <p class="x-script portada__para" data-x-entra>{invitado ?? 'celebrar conmigo'}</p>
+
+    <button class="portada__sello" type="button" data-gate-abrir aria-label="Abrir invitación" data-x-entra>
+      <Corona nombre={nombre} sello />
+    </button>
+
+    <p class="x-caps portada__tipo" data-x-entra>{tipo}</p>
+    <p class="portada__nombre" data-x-entra>{nombre}</p>
+    <p class="x-caps portada__fecha" data-x-entra>{fecha}</p>
+    <p class="portada__accion" data-x-entra>Toca el sello para abrir</p>
+  </div>
+</div>
+
+<script>
+  import { gsap, movimientoReducido } from '../../../lib/escena';
+  import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
+
+  gsap.registerPlugin(DrawSVGPlugin);
+
+  const portada = document.querySelector<HTMLElement>('[data-gate-portada]');
+  if (portada && !movimientoReducido()) {
+    gsap
+      .timeline({ defaults: { ease: 'power3.out' } })
+      .from(portada.querySelectorAll('.puerta__marco'), { opacity: 0, scale: 0.96, duration: 1.2 })
+      .from(portada.querySelectorAll('.flores__tallo'), { drawSVG: '0%', duration: 1.5, ease: 'power2.inOut' }, 0.2)
+      .from(
+        portada.querySelectorAll('.flores__hoja'),
+        { scale: 0, transformOrigin: '0% 50%', duration: 0.5, stagger: 0.03, ease: 'back.out(2)' },
+        0.6,
+      )
+      .from(
+        portada.querySelectorAll('.flores__flor'),
+        { scale: 0, rotate: -90, transformOrigin: '50% 50%', duration: 0.9, stagger: 0.12, ease: 'back.out(1.8)' },
+        0.9,
+      )
+      .from(portada.querySelectorAll('[data-x-entra]'), { opacity: 0, y: 18, duration: 0.9, stagger: 0.1 }, 0.5);
+
+    gsap.to(portada.querySelector('.portada__sello .corona'), {
+      scale: 1.05,
+      duration: 1.2,
+      repeat: -1,
+      yoyo: true,
+      ease: 'sine.inOut',
+      delay: 2.4,
+    });
+  }
+</script>
+
+<style>
+  .portada {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    perspective: 1400px;
+    opacity: 1;
+  }
+
+  .portada[data-saliendo='true'] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease 1.5s;
+  }
+
+  .puerta {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    overflow: hidden;
+    background: var(--x-fondo-papel);
+    backface-visibility: hidden;
+  }
+
+  .puerta--izq {
+    left: 0;
+    transform-origin: left center;
+    box-shadow: inset -12px 0 18px -14px rgb(90 50 55 / 0.35);
+  }
+
+  .puerta--der {
+    right: 0;
+    transform-origin: right center;
+    box-shadow: inset 12px 0 18px -14px rgb(90 50 55 / 0.35);
+  }
+
+  /* Filete dorado doble: cada puerta tiene su mitad del marco. */
+  .puerta__marco {
+    position: absolute;
+    inset: 1rem 0 1rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--x-oro) 75%, transparent);
+    border-right: 0;
+    outline: 1px solid color-mix(in srgb, var(--x-oro) 35%, transparent);
+    outline-offset: 4px;
+  }
+
+  .puerta--der .puerta__marco {
+    inset: 1rem 1rem 1rem 0;
+    border-right: 1px solid color-mix(in srgb, var(--x-oro) 75%, transparent);
+    border-left: 0;
+  }
+
+  .puerta__flores {
+    position: absolute;
+    width: min(46vw, 15rem);
+  }
+
+  .puerta__flores--arriba {
+    top: -1.5rem;
+    left: -2rem;
+  }
+
+  .puerta__flores--abajo {
+    right: -2rem;
+    bottom: -1.5rem;
+    transform: rotate(180deg);
+  }
+
+  .portada__textos {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    justify-items: center;
+    gap: 0.35rem;
+    width: min(20rem, 86vw);
+    text-align: center;
+  }
+
+  .portada__antes {
+    font-size: 0.68rem;
+  }
+
+  .portada__para {
+    margin-bottom: 1.4rem;
+    font-size: clamp(2.2rem, 11vw, 2.9rem);
+    line-height: 1.1;
+    color: var(--x-rosa-osc);
+  }
+
+  .portada__sello {
+    --corona: 6.2rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .portada__tipo {
+    margin-top: 1.4rem;
+    font-size: 0.72rem;
+  }
+
+  .portada__nombre {
+    margin: 0;
+    font-family: var(--x-f-serif);
+    max-width: 100%;
+    font-size: clamp(1.8rem, 9vw, 2.6rem);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    overflow-wrap: anywhere;
+    text-transform: uppercase;
+    color: var(--x-tinta);
+  }
+
+  .portada__fecha {
+    font-size: 0.72rem;
+  }
+
+  .portada__accion {
+    margin-top: 1.4rem;
+    font-family: var(--x-f-serif);
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--x-suave);
+  }
+
+  /* --- Apertura -------------------------------------------------------- */
+  .portada[data-saliendo='true'] .portada__textos {
+    animation: textos-salen 0.5s ease-in forwards;
+  }
+
+  .portada[data-saliendo='true'] .puerta--izq {
+    animation: abre-izq 1.3s cubic-bezier(0.65, 0, 0.35, 1) 0.35s forwards;
+  }
+
+  .portada[data-saliendo='true'] .puerta--der {
+    animation: abre-der 1.3s cubic-bezier(0.65, 0, 0.35, 1) 0.35s forwards;
+  }
+
+  @keyframes textos-salen {
+    to {
+      opacity: 0;
+      transform: scale(0.94);
+    }
+  }
+
+  @keyframes abre-izq {
+    to {
+      transform: rotateY(-110deg);
+    }
+  }
+
+  @keyframes abre-der {
+    to {
+      transform: rotateY(110deg);
+    }
+  }
+</style>

@@ -1,0 +1,78 @@
+---
+/**
+ * Monograma de XV: tiara sobre la inicial, dentro de un aro fino dorado.
+ * `sello` lo pinta como un sello de cera rosa con relieve.
+ */
+interface Props {
+  nombre: string;
+  sello?: boolean;
+}
+
+const { nombre, sello = false } = Astro.props;
+const inicial = nombre.trim().charAt(0).toUpperCase();
+---
+
+<div class:list={['corona', { 'corona--sello': sello }]} aria-hidden="true">
+  <svg viewBox="0 0 120 120" class="corona__aro">
+    <circle cx="60" cy="60" r="55" fill="none" stroke="currentColor" stroke-width="1" />
+    <circle cx="60" cy="60" r="51" fill="none" stroke="currentColor" stroke-width="0.4" />
+    <g class="corona__tiara" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round">
+      <path d="M40 38 L44 26 L52 33 L60 20 L68 33 L76 26 L80 38 Z" />
+      <path d="M40 38 Q60 43 80 38" />
+      <circle cx="60" cy="18" r="1.8" fill="currentColor" />
+      <circle cx="44" cy="24" r="1.3" fill="currentColor" />
+      <circle cx="76" cy="24" r="1.3" fill="currentColor" />
+    </g>
+  </svg>
+  <span class="corona__letra">{inicial}</span>
+</div>
+
+<style>
+  .corona {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: var(--corona, 6rem);
+    aspect-ratio: 1;
+    color: var(--x-oro);
+  }
+
+  .corona__aro {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .corona__letra {
+    font-family: var(--x-f-script);
+    font-size: calc(var(--corona, 6rem) * 0.46);
+    line-height: 1;
+    color: var(--x-rosa-osc);
+    transform: translateY(0.18em);
+  }
+
+  .corona--sello {
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.45), transparent 45%),
+      radial-gradient(circle at 70% 75%, rgb(0 0 0 / 0.18), transparent 55%),
+      var(--x-rosa);
+    box-shadow:
+      0 3px 0 color-mix(in srgb, var(--x-rosa) 70%, black),
+      0 12px 26px rgb(90 40 50 / 0.3),
+      inset 0 0 0 3px color-mix(in srgb, var(--x-rosa) 70%, white);
+    color: rgb(255 255 255 / 0.9);
+  }
+
+  .corona--sello .corona__aro {
+    inset: 9%;
+    width: 82%;
+    height: 82%;
+  }
+
+  .corona--sello .corona__letra {
+    color: #fff;
+    text-shadow: 0 1px 0 rgb(0 0 0 / 0.2);
+  }
+</style>
