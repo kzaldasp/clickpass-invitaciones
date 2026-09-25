@@ -9,6 +9,33 @@ export default defineConfig({
     // El build usa su propia cache: si compartiera node_modules/.vite con un
     // `astro dev` corriendo, le invalidaria las dependencias y daria error 500.
     cacheDir: process.env.npm_lifecycle_event === 'build' ? 'node_modules/.vite-build' : undefined,
+    // Todas las dependencias se declaran de antemano. Si Vite descubre una tarde
+    // (al abrir por primera vez una pagina que la usa), re-optimiza en caliente
+    // y el runtime de Workers queda apuntando a archivos que ya no existen:
+    // error 500 "The file does not exist ... optimize deps directory".
+    // Si agregas una dependencia, sumala aqui.
+    ssr: {
+      optimizeDeps: {
+        include: [
+          'drizzle-orm',
+          'drizzle-orm/libsql',
+          'drizzle-orm/sqlite-core',
+          '@libsql/client/web',
+          'qrcode-generator',
+        ],
+      },
+    },
+    optimizeDeps: {
+      include: [
+        'gsap',
+        'gsap/ScrollTrigger',
+        'gsap/DrawSVGPlugin',
+        'gsap/SplitText',
+        'lenis',
+        'jsqr',
+        'xlsx',
+      ],
+    },
   },
   adapter: cloudflare({
     // Las ilustraciones llegan como PNG con alfa ya recortado. Se optimizan al

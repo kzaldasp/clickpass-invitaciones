@@ -56,7 +56,9 @@ La base local la sirve `npm run db:dev` (Turso en el puerto 8880; `astro dev`
 corre en workerd y no puede leer archivos). Después, `npm run db:migrate` y
 `npm run db:seed`. Verifica con `npm run check`, `npm test` y `npm run build`.
 
-Si cambias dependencias con el servidor corriendo, reinícialo y borra
+Toda dependencia nueva va también en `optimizeDeps.include` (cliente) o
+`ssr.optimizeDeps.include` (servidor) de `astro.config.mjs`; si no, Vite la
+descubre tarde y el dev en workerd da 500. Si pasa, reinicia y borra
 `node_modules/.vite`.
 
 When starting the dev server, use background mode:

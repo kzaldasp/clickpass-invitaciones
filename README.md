@@ -42,9 +42,11 @@ Con la semilla:
 
 Para un admin real: `npm run admin:crear -- correo@dominio.com "Nombre" "clave larga"`.
 
-> Si instalas o quitas dependencias con el servidor corriendo, reinícialo
-> (`astro dev stop`, borra `node_modules/.vite` y vuelve a arrancar): el
-> optimizador de Vite en workerd no se recupera solo.
+> Las dependencias se declaran de antemano en `optimizeDeps` de
+> `astro.config.mjs`: si Vite descubre una tarde, re-optimiza en caliente y el
+> runtime de Workers da error 500 ("The file does not exist … optimize deps").
+> **Al agregar una dependencia, súmala ahí.** Si aun así aparece, reinicia con
+> `astro dev stop`, borra `node_modules/.vite` y vuelve a arrancar.
 
 ## Comandos
 
