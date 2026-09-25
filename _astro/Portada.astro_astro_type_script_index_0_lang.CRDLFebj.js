@@ -1,0 +1,1 @@
+globalThis.process??={},globalThis.process.env??={};import{t as e}from"./animaciones.BCJQNjQI.js";e(document.querySelector(`[data-gate-portada]`));

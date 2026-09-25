@@ -1,0 +1,1 @@
+globalThis.process??={},globalThis.process.env??={};import{r as e,s as t}from"./escena.CYZ1By-e.js";import{t as n}from"./animaciones.BCJQNjQI.js";var r=document.querySelector(`[data-gate-portada]`);n(r),r&&!e()&&t.to(r.querySelector(`.portada__cohete`),{y:-8,duration:1.4,repeat:-1,yoyo:!0,ease:`sine.inOut`});

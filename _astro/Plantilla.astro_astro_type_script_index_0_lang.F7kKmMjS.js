@@ -1,0 +1,1 @@
+globalThis.process??={},globalThis.process.env??={};import{n as e,r as t}from"./animaciones.BCJQNjQI.js";document.addEventListener(`invitacion:abierta`,()=>{t({entradaFoto:`circulo`}),e(`[data-ca-estrella]`,{duracion:[12,18],balanceo:40,giro:180})});

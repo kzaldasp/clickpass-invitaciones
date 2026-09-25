@@ -1,0 +1,1 @@
+globalThis.process??={},globalThis.process.env??={};import{r as e}from"./animaciones.BCJQNjQI.js";document.addEventListener(`invitacion:abierta`,()=>e({entradaFoto:`abajo`}));

@@ -1,0 +1,1 @@
+globalThis.process??={},globalThis.process.env??={};import{n as e,r as t}from"./animaciones.BCJQNjQI.js";document.addEventListener(`invitacion:abierta`,()=>{t({entradaFoto:`lados`}),e(`[data-sk-petalo]`,{duracion:[9,14],balanceo:90,giro:540})});
