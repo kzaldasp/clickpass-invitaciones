@@ -1,0 +1,111 @@
+---
+/**
+ * Paginas publicas de la plataforma (catalogo). Sigue el modo del sistema.
+ */
+import Base from './Base.astro';
+
+interface Props {
+  titulo: string;
+  descripcion?: string;
+}
+
+const { titulo, descripcion } = Astro.props;
+const ruta = Astro.url.pathname;
+---
+
+<Base titulo={titulo} descripcion={descripcion} privada={false}>
+  <meta slot="head" property="og:title" content={titulo === 'ClickPass' ? 'ClickPass · Invitaciones digitales' : titulo} />
+  {descripcion && <meta slot="head" property="og:description" content={descripcion} />}
+
+  <header class="pub-cabecera">
+    <div class="pub-ancho pub-cabecera__fila">
+      <a href="/catalogo" class="pub-marca">ClickPass</a>
+      <nav class="pub-nav" aria-label="Principal">
+        <a href="/catalogo" aria-current={ruta === '/catalogo' ? 'page' : undefined}>Catálogo</a>
+        <a href="/catalogo#como-funciona">Cómo funciona</a>
+        <a href="/entrar" class="btn btn--sm">Mi panel</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <slot />
+  </main>
+
+  <footer class="pub-pie">
+    <div class="pub-ancho pub-pie__fila">
+      <span class="pub-marca" style="font-size:1.1rem">ClickPass</span>
+      <span class="suave pequeno">Invitaciones digitales · Hecho en Ecuador</span>
+      <button type="button" class="btn btn--sm btn--fantasma" data-modo>Modo claro / oscuro</button>
+    </div>
+  </footer>
+</Base>
+
+<style is:global>
+  .pub-ancho {
+    width: min(72rem, 100% - 2 * var(--gutter));
+    margin-inline: auto;
+  }
+
+  .pub-cabecera {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    border-bottom: 1px solid var(--borde);
+    background: color-mix(in srgb, var(--fondo) 85%, transparent);
+    backdrop-filter: blur(10px);
+  }
+
+  .pub-cabecera__fila {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 4rem;
+  }
+
+  .pub-marca {
+    font-family: var(--f-titulo);
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--texto);
+    text-decoration: none;
+  }
+
+  .pub-nav {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.75rem, 2.5vw, 1.75rem);
+    font-size: 0.875rem;
+  }
+
+  .pub-nav a:not(.btn) {
+    color: var(--texto-suave);
+    text-decoration: none;
+  }
+
+  .pub-nav a:not(.btn):hover,
+  .pub-nav a[aria-current='page'] {
+    color: var(--texto);
+  }
+
+  @media (max-width: 30rem) {
+    .pub-nav a[href$='#como-funciona'] {
+      display: none;
+    }
+  }
+
+  .pub-pie {
+    margin-top: 5rem;
+    border-top: 1px solid var(--borde);
+  }
+
+  .pub-pie__fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 2rem;
+  }
+</style>

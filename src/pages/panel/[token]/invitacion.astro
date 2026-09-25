@@ -15,7 +15,7 @@ let v: ValoresContenido = valoresContenido(e);
 let error = '';
 
 if (Astro.request.method === 'POST') {
-  const r = await guardarContenido(e, await Astro.request.formData(), esAdmin);
+  const r = await guardarContenido(e, await Astro.request.formData());
   if (r.ok) {
     ponerAviso(Astro.cookies, 'Invitación guardada. Los links ya enviados muestran los cambios.');
     return Astro.redirect(`${base}/invitacion`);
@@ -176,29 +176,9 @@ const lugares = [...c.lugares, { titulo: '', hora: '', nombre: '', direccion: ''
 
     {
       esAdmin && (
-        <section class="seccion-form">
-          <div class="seccion-form__cabecera">
-            <h2>Fotos y música</h2>
-            <p class="suave pequeno">Solo admin. Sube archivos en la ficha del evento y pega aquí sus URLs.</p>
-          </div>
-          <div class="rejilla">
-            <label class="campo">
-              <span>Galería (una URL por línea)</span>
-              <textarea name="galeria" rows="4" class="mono">{c.galeria.join('\n')}</textarea>
-              <span class="campo__ayuda">La primera foto también es la imagen del link en WhatsApp.</span>
-            </label>
-            <div class="rejilla rejilla--2">
-              <label class="campo">
-                <span>Música (URL)</span>
-                <input name="musica" value={c.musica?.archivo ?? ''} class="mono" />
-              </label>
-              <label class="campo">
-                <span>Título de la canción</span>
-                <input name="musicaTitulo" value={c.musica?.titulo ?? ''} />
-              </label>
-            </div>
-          </div>
-        </section>
+        <p class="alerta">
+          Fotos y música se gestionan desde la&nbsp;<a href={`/admin/eventos/${e.id}`}>ficha del evento</a>.
+        </p>
       )
     }
 

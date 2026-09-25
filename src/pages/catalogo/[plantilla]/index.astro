@@ -1,0 +1,205 @@
+---
+/**
+ * Ficha de un diseno: la demo dentro de un marco de telefono (escritorio) o un
+ * boton a pantalla completa (movil), sus paletas y el boton de compra.
+ */
+import { CONTACTO_WHATSAPP } from 'astro:env/server';
+import Publico from '../../../layouts/Publico.astro';
+import Icono from '../../../components/Icono.astro';
+import { TIPOS_EVENTO } from '../../../lib/config';
+import { usuarioDeSesion } from '../../../lib/sesion';
+import { manifiestoDe } from '../../../plantillas';
+
+const m = manifiestoDe(Astro.params.plantilla!);
+// Las privadas (hechas a medida) solo las ve el admin.
+const esAdmin = m?.visibilidad === 'privada' && (await usuarioDeSesion(Astro.cookies))?.rol === 'admin';
+if (!m || (m.visibilidad === 'privada' && !esAdmin)) return Astro.rewrite('/404');
+
+const demo = `/catalogo/${m.slug}/demo`;
+const mensaje = `¡Hola! Me interesa la invitación "${m.nombre}" que vi en el catálogo.`;
+const whatsapp = CONTACTO_WHATSAPP ? `https://wa.me/${CONTACTO_WHATSAPP}?text=${encodeURIComponent(mensaje)}` : null;
+---
+
+<Publico titulo={`${m.nombre} · Invitación digital`} descripcion={m.descripcion}>
+  <meta slot="head" property="og:image" content={new URL(m.portada, Astro.url.origin).href} />
+
+  <div class="pub-ancho ficha">
+    <div class="ficha__texto">
+      <nav class="migas"><a href="/catalogo">Catálogo</a> / <span>{m.nombre}</span></nav>
+      <p class="suave pequeno">{m.tiposEvento.map((t) => TIPOS_EVENTO[t]).join(' · ')}</p>
+      <h1 class="ficha__titulo">{m.nombre}</h1>
+      <p class="ficha__desc suave">{m.descripcion}</p>
+
+      {
+        m.presets && m.presets.length > 1 && (
+          <div class="pila" style="gap:.6rem">
+            <span class="campo__etiqueta">Paletas</span>
+            <div class="paletas" role="radiogroup" aria-label="Paleta de la demo">
+              {m.presets.map((p, i) => (
+                <button
+                  type="button"
+                  class="paleta"
+                  role="radio"
+                  aria-checked={i === 0 ? 'true' : 'false'}
+                  data-preset={p.id}
+                  title={p.nombre}
+                  style={`--muestra:${p.muestra}`}
+                >
+                  <span class="visualmente-oculto">{p.nombre}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+      <ul class="incluye">
+        <li><Icono nombre="check" /> Link personal para cada invitado, con su nombre y sus pases</li>
+        <li><Icono nombre="check" /> Confirmación de asistencia en un toque</li>
+        <li><Icono nombre="check" /> Panel para ver quién viene y descargar la lista</li>
+        <li><Icono nombre="check" /> Música, cuenta regresiva y mapa de cada lugar</li>
+      </ul>
+
+      <div class="acciones">
+        {
+          whatsapp && (
+            <a class="btn btn--primario" href={whatsapp} target="_blank" rel="noopener">
+              <Icono nombre="whatsapp" /> La quiero
+            </a>
+          )
+        }
+        <a class="btn" href={demo} data-demo-enlace>
+          <Icono nombre="ojo" /> Abrir demo completa
+        </a>
+      </div>
+    </div>
+
+    <div class="telefono" aria-label="Demo de la invitación">
+      <iframe src={demo} title={`Demo de ${m.nombre}`} loading="lazy" data-demo-iframe></iframe>
+    </div>
+  </div>
+</Publico>
+
+<script>
+  // Cambiar la paleta recarga la demo con ?preset=
+  const iframe = document.querySelector<HTMLIFrameElement>('[data-demo-iframe]');
+  const enlace = document.querySelector<HTMLAnchorElement>('[data-demo-enlace]');
+  document.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((b) => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('[data-preset]').forEach((o) => o.setAttribute('aria-checked', String(o === b)));
+      const url = new URL(enlace!.href);
+      url.searchParams.set('preset', b.dataset.preset!);
+      enlace!.href = url.pathname + url.search;
+      if (iframe) iframe.src = enlace!.href;
+    });
+  });
+</script>
+
+<style>
+  .ficha {
+    display: grid;
+    gap: 3rem;
+    align-items: center;
+    padding-block: clamp(2rem, 5vw, 4rem);
+  }
+
+  @media (min-width: 60rem) {
+    .ficha {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+  }
+
+  .ficha__texto {
+    display: grid;
+    gap: 1.25rem;
+    align-content: start;
+  }
+
+  .ficha__titulo {
+    font-size: clamp(2.6rem, 6vw, 4rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .ficha__desc {
+    max-width: 34rem;
+    font-size: 1.1rem;
+  }
+
+  .incluye {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .incluye li {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+  }
+
+  .incluye :global(svg) {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-top: 0.2rem;
+    flex: none;
+    color: var(--acento);
+  }
+
+  .paletas {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .paleta {
+    width: 2.1rem;
+    height: 2.1rem;
+    padding: 0;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 50%;
+    background: var(--muestra);
+    cursor: pointer;
+  }
+
+  .paleta[aria-checked='true'] {
+    box-shadow:
+      0 0 0 3px var(--fondo),
+      0 0 0 4px var(--texto);
+  }
+
+  /* Marco de telefono: la invitacion se diseno para 390x844. */
+  .telefono {
+    display: none;
+    width: 390px;
+    height: 844px;
+    padding: 12px;
+    border-radius: 54px;
+    background: #111;
+    box-shadow:
+      0 0 0 1px var(--borde-fuerte),
+      0 30px 60px -20px rgb(0 0 0 / 0.35);
+    transform-origin: top center;
+  }
+
+  .telefono iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 42px;
+    background: #000;
+  }
+
+  @media (min-width: 60rem) {
+    .telefono {
+      display: block;
+    }
+  }
+
+  @media (min-width: 60rem) and (max-height: 900px) {
+    .telefono {
+      zoom: 0.85;
+    }
+  }
+</style>

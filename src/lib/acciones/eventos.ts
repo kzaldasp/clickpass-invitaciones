@@ -8,6 +8,7 @@ import { instanteALocal, localAInstante } from '../fechas';
 import { centavos, entero, filas, marcado, texto } from '../formularios';
 import { normalizarTelefono } from '../telefonos';
 import { slugificar } from '../texto';
+import { borrarMediosDe } from '../medios';
 import { tokenSeguro } from '../tokens';
 
 /**
@@ -310,5 +311,6 @@ export async function regenerarPanel(e: Evento): Promise<string> {
 }
 
 export async function eliminarEvento(e: Evento): Promise<void> {
+  await borrarMediosDe(e);
   await db().delete(eventos).where(eq(eventos.id, e.id));
 }

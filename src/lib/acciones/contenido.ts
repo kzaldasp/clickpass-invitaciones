@@ -7,8 +7,8 @@ import { instanteALocal, localAInstante } from '../fechas';
 import { filas, opcional, texto } from '../formularios';
 
 /**
- * Editor de la invitacion (panel). El cliente edita textos y datos; galeria y
- * musica solo las toca el admin (vienen en el form solo si es admin).
+ * Editor de la invitacion (panel). Cliente y admin editan textos y datos; las
+ * fotos y la musica se gestionan aparte (src/lib/medios.ts, solo admin).
  */
 
 export interface ValoresContenido {
@@ -22,7 +22,7 @@ export function valoresContenido(e: Evento): ValoresContenido {
 
 type Resultado = { ok: true } | { ok: false; error: string; valores: ValoresContenido };
 
-export async function guardarContenido(e: Evento, form: FormData, esAdmin: boolean): Promise<Resultado> {
+export async function guardarContenido(e: Evento, form: FormData): Promise<Resultado> {
   const m = manifiestoDe(e.plantilla);
   const edad = texto(form, 'edad', 3);
   const nombresAnfitriones = texto(form, 'anfitriones', 1000)
@@ -55,14 +55,8 @@ export async function guardarContenido(e: Evento, form: FormData, esAdmin: boole
       ? { titulo: texto(form, 'dressTitulo', 120), nota: opcional(form, 'dressNota', 300) }
       : undefined,
     despedida: opcional(form, 'despedida', 300),
-    galeria: esAdmin && form.has('galeria')
-      ? texto(form, 'galeria', 5000).split('\n').map((g) => g.trim()).filter(Boolean)
-      : e.contenido.galeria,
-    musica: esAdmin && form.has('musica')
-      ? texto(form, 'musica', 500)
-        ? { archivo: texto(form, 'musica', 500), titulo: opcional(form, 'musicaTitulo', 120) }
-        : undefined
-      : e.contenido.musica,
+    galeria: e.contenido.galeria,
+    musica: e.contenido.musica,
     extras,
   };
   const fechaLocal = texto(form, 'fechaLocal', 20);

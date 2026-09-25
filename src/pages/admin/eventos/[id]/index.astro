@@ -11,6 +11,7 @@ import {
   regenerarPanel,
 } from '../../../../lib/acciones/eventos';
 import { borrarPago, registrarPago } from '../../../../lib/acciones/pagos';
+import { fotoPrincipal, quitarMedio, subirMedio } from '../../../../lib/medios';
 import { ponerAviso } from '../../../../lib/aviso';
 import { etiquetaZona, fechaCorta, fechaLarga, fechaPartes } from '../../../../lib/fechas';
 import { texto } from '../../../../lib/formularios';
@@ -46,6 +47,20 @@ if (Astro.request.method === 'POST') {
   } else if (accion === 'borrar_pago') {
     await borrarPago(e, texto(form, 'id', 64));
     aviso('Pago eliminado.', 'info');
+  } else if (accion === 'subir_medio') {
+    const archivo = form.get('archivo');
+    if (archivo instanceof File && archivo.size > 0) {
+      const r = await subirMedio(e, archivo, texto(form, 'titulo', 120));
+      aviso(r.error ?? r.texto!, r.error ? 'error' : 'exito');
+    } else {
+      aviso('Elige un archivo.', 'error');
+    }
+  } else if (accion === 'quitar_medio') {
+    await quitarMedio(e, texto(form, 'url', 300));
+    aviso('Archivo quitado.', 'info');
+  } else if (accion === 'foto_principal') {
+    await fotoPrincipal(e, texto(form, 'url', 300));
+    aviso('Foto principal actualizada: es la que se ve al compartir el link.');
   } else if (accion === 'eliminar') {
     if (texto(form, 'confirmacion', 80) !== e.slug) {
       aviso('Para eliminar escribe el link del evento tal cual.', 'error');
@@ -195,6 +210,58 @@ const porcentaje = (n: number, d: number) => (d ? Math.round((n / d) * 100) : 0)
             <button class="btn btn--sm btn--fantasma" data-abrir="dlg-regenerar"><Icono nombre="refrescar" /> Regenerar</button>
           </div>
         </div>
+      </section>
+
+      <section class="tarjeta pila">
+        <div class="tarjeta__cabecera" style="margin:0">
+          <h2>Fotos y música</h2>
+          <button class="btn btn--sm" data-abrir="dlg-medio"><Icono nombre="subir" /> Subir</button>
+        </div>
+        {
+          e.contenido.galeria.length === 0 && !e.contenido.musica ? (
+            <p class="suave pequeno">
+              Sin fotos ni música. La primera foto que subas será la imagen del link al compartirlo por WhatsApp.
+            </p>
+          ) : (
+            <>
+              {e.contenido.galeria.length > 0 && (
+                <ul class="galeria-admin">
+                  {e.contenido.galeria.map((url, n) => (
+                    <li>
+                      <img src={url} alt="" loading="lazy" />
+                      {n === 0 && <span class="insignia insignia--sin-punto galeria-admin__marca">Principal</span>}
+                      <form method="post" class="galeria-admin__acciones">
+                        <input type="hidden" name="url" value={url} />
+                        {n > 0 && (
+                          <button class="btn btn--sm" name="_accion" value="foto_principal" type="submit">
+                            Principal
+                          </button>
+                        )}
+                        <button class="btn btn--sm btn--texto-peligro" name="_accion" value="quitar_medio" type="submit">
+                          Quitar
+                        </button>
+                      </form>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {e.contenido.musica && (
+                <div class="acciones" style="justify-content:space-between">
+                  <div class="pila" style="gap:.35rem;flex:1;min-width:14rem">
+                    <span class="campo__etiqueta">Música{e.contenido.musica.titulo ? ` · ${e.contenido.musica.titulo}` : ''}</span>
+                    <audio controls preload="none" src={e.contenido.musica.archivo} style="width:100%" />
+                  </div>
+                  <form method="post">
+                    <input type="hidden" name="url" value={e.contenido.musica.archivo} />
+                    <button class="btn btn--sm btn--texto-peligro" name="_accion" value="quitar_medio" type="submit">
+                      Quitar
+                    </button>
+                  </form>
+                </div>
+              )}
+            </>
+          )
+        }
       </section>
 
       <section class="tarjeta pila">
@@ -356,6 +423,24 @@ const porcentaje = (n: number, d: number) => (d ? Math.round((n / d) * 100) : 0)
     </div>
   </Dialogo>
 
+  <Dialogo
+    id="dlg-medio"
+    titulo="Subir foto o música"
+    descripcion="Fotos: JPG, PNG, WebP o AVIF hasta 5 MB. Música: MP3 o M4A hasta 12 MB (reemplaza la actual)."
+    accion="subir_medio"
+    textoBoton="Subir"
+    multipart
+  >
+    <label class="campo">
+      <span>Archivo</span>
+      <input type="file" name="archivo" accept="image/jpeg,image/png,image/webp,image/avif,audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,audio/ogg" required />
+    </label>
+    <label class="campo">
+      <span>Título de la canción (solo música)</span>
+      <input name="titulo" maxlength="120" placeholder="Nombre de la canción" />
+    </label>
+  </Dialogo>
+
   <Dialogo id="dlg-borrar-pago" titulo="¿Quitar este pago?" accion="borrar_pago" textoBoton="Quitar" peligro>
     <input type="hidden" name="id" />
     <p><strong data-texto="resumen"></strong></p>
@@ -375,3 +460,45 @@ const porcentaje = (n: number, d: number) => (d ? Math.round((n / d) * 100) : 0)
     </label>
   </Dialogo>
 </Admin>
+
+<style>
+  .galeria-admin {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .galeria-admin li {
+    position: relative;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .galeria-admin img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--r);
+    background: var(--superficie-2);
+  }
+
+  .galeria-admin__marca {
+    position: absolute;
+    top: 0.4rem;
+    left: 0.4rem;
+    background: var(--superficie);
+  }
+
+  .galeria-admin__acciones {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .galeria-admin__acciones .btn {
+    flex: 1;
+    padding-inline: 0.4rem;
+  }
+</style>

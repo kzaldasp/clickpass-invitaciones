@@ -17,6 +17,9 @@ export default defineConfig({
       TURSO_AUTH_TOKEN: envField.string({ context: 'server', access: 'secret', optional: true }),
       // Correo para el login con codigo. Sin clave, el codigo se imprime en consola (solo dev).
       RESEND_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
+      // WhatsApp de ventas (solo digitos, con codigo de pais). Sin esto el
+      // catalogo no muestra el boton "La quiero". Se lee en runtime (secret).
+      CONTACTO_WHATSAPP: envField.string({ context: 'server', access: 'secret', optional: true }),
       CORREO_REMITENTE: envField.string({
         context: 'server',
         access: 'public',

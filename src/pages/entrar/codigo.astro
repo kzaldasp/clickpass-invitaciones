@@ -1,0 +1,53 @@
+---
+import Simple from '../../layouts/Simple.astro';
+import { verificarCodigo } from '../../lib/acciones/acceso';
+import { texto } from '../../lib/formularios';
+import { iniciarSesion } from '../../lib/sesion';
+
+const email = (Astro.url.searchParams.get('email') ?? '').toLowerCase();
+if (!email) return Astro.redirect('/entrar');
+
+let error = '';
+if (Astro.request.method === 'POST') {
+  const r = await verificarCodigo(email, texto(await Astro.request.formData(), 'codigo', 10));
+  if (r.usuario) {
+    await iniciarSesion(Astro.cookies, r.usuario.id, Astro.url.protocol === 'https:');
+    return Astro.redirect('/panel');
+  }
+  error = r.error ?? '';
+}
+---
+
+<Simple titulo="Código de acceso">
+  <h1>Revisa tu correo</h1>
+  <p class="suave">
+    Si <strong>{email}</strong> está registrado, te llegó un código de 6 dígitos. Vence en 10 minutos.
+  </p>
+  {error && <p class="alerta alerta--peligro">{error}</p>}
+  <form method="post" class="formulario">
+    <label class="campo">
+      <span>Código</span>
+      <input
+        name="codigo"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        pattern="[0-9]{6}"
+        maxlength="6"
+        required
+        autofocus
+        class="codigo"
+      />
+    </label>
+    <button type="submit" class="btn btn--primario btn--bloque">Entrar</button>
+  </form>
+  <a class="pequeno" href="/entrar">Usar otro correo o pedir un código nuevo</a>
+</Simple>
+
+<style>
+  .codigo {
+    font-size: 1.6rem !important;
+    letter-spacing: 0.5em;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+</style>

@@ -7,7 +7,7 @@ export const manifiesto: Manifiesto = {
   version: 1,
   visibilidad: 'publica',
   tiposEvento: ['infantil', 'cumpleanos'],
-  portada: '/ilustraciones/aracnido/portada.svg',
+  portada: '/ilustraciones/aracnido/portada.jpg',
   colorTema: '#0a0a14',
   demo: {
     diasHastaEvento: 45,

@@ -1,0 +1,71 @@
+---
+/**
+ * Eventos del cliente que entro con su correo. Cada uno lleva a su panel
+ * (el mismo /panel/{token} del link privado).
+ */
+import Simple from '../../layouts/Simple.astro';
+import Estado from '../../components/Estado.astro';
+import { eventosDeCliente } from '../../db/consultas';
+import { fechaLarga } from '../../lib/fechas';
+
+const u = Astro.locals.usuario!;
+if (u.rol === 'admin') return Astro.redirect('/admin');
+const eventos = await eventosDeCliente(u.id);
+if (eventos.length === 1) return Astro.redirect(`/panel/${eventos[0].tokenPanel}`);
+---
+
+<Simple titulo="Mis eventos">
+  <h1>Hola, {u.nombre.split(' ')[0]}</h1>
+  {
+    eventos.length === 0 ? (
+      <p class="suave">Aún no tienes eventos. Escríbenos para crear tu invitación.</p>
+    ) : (
+      <ul class="lista-eventos">
+        {eventos.map((e) => (
+          <li>
+            <a href={`/panel/${e.tokenPanel}`}>
+              <span>
+                <strong>{e.contenido.festejado.nombre}</strong>
+                <span class="suave pequeno" style="display:block">
+                  {e.contenido.tipo} · {fechaLarga(e.fecha, e.zonaHoraria)}
+                </span>
+              </span>
+              <Estado estado={e.estado} />
+            </a>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  <form method="post" action="/entrar/salir">
+    <button class="btn btn--fantasma btn--sm" type="submit">Salir</button>
+  </form>
+</Simple>
+
+<style>
+  .lista-eventos {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+  }
+
+  .lista-eventos a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--r);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .lista-eventos a:hover {
+    border-color: var(--borde-fuerte);
+    background: var(--superficie-2);
+  }
+</style>

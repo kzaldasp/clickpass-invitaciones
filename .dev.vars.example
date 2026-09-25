@@ -4,3 +4,5 @@ TURSO_DATABASE_URL=http://127.0.0.1:8880
 TURSO_AUTH_TOKEN=
 # Opcional. Sin clave, los codigos de acceso se imprimen en la consola.
 RESEND_API_KEY=
+# WhatsApp de ventas para el catalogo (solo digitos): 593991234567
+CONTACTO_WHATSAPP=

@@ -1,0 +1,21 @@
+---
+/**
+ * Demo a pantalla completa con datos de ejemplo. El formulario no guarda nada.
+ * ?preset= prueba otra paleta.
+ */
+import { componenteDe } from '../../../plantillas/componentes';
+import { manifiestoDe } from '../../../plantillas';
+import { usuarioDeSesion } from '../../../lib/sesion';
+import { vistaDemo } from '../../../lib/vistas';
+
+const m = manifiestoDe(Astro.params.plantilla!);
+const esAdmin = m?.visibilidad === 'privada' && (await usuarioDeSesion(Astro.cookies))?.rol === 'admin';
+const Plantilla = m && componenteDe(m.slug, m.version);
+if (!m || !Plantilla || (m.visibilidad === 'privada' && !esAdmin)) return Astro.rewrite('/404');
+
+const preset = Astro.url.searchParams.get('preset');
+const { evento, invitado, confirmacion } = vistaDemo(m);
+evento.preset = m.presets?.some((p) => p.id === preset) ? preset : null;
+---
+
+<Plantilla evento={evento} invitado={invitado} confirmacion={confirmacion} />
