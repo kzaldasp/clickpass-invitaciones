@@ -203,13 +203,14 @@ invitado está en otra zona).
 | `sakura` | Estilo anime/manga | Puertas shoji que se deslizan; viñetas con líneas de velocidad, pétalos |
 | `castillo` | Princesa de cuento | Libro de cuentos que se abre; castillo que se dibuja, estrellas |
 | `heroico` | Superhéroes en cómic | Portada de revista que se rasga; onomatopeyas que explotan |
+| `lucha` | Lucha libre | Campana y cuerdas del ring que se abren; reflectores, cinturón de campeón con el nombre, ¡K.O.! |
 | `galaxia` | Espacial | Cohete que despega con cuenta atrás; planeta con anillo, estrellas en capas |
 | `jurasico` | Dinosaurios | Huevo que se rompe; volcán, huellas que aparecen al bajar |
 | `aracnido` | Superhéroe arácnido | Héroe que baja por su telaraña con el scroll |
 
 **Temas con personajes:** las plantillas infantiles están *inspiradas* en
-princesas, superhéroes o anime, pero no usan personajes, nombres ni logos con
-marca (Disney, Marvel, series concretas): ClickPass vende las invitaciones y
+princesas, superhéroes, anime o lucha libre, pero no usan personajes, nombres
+ni logos con marca (Disney, Marvel, WWE, series concretas): ClickPass vende las invitaciones y
 eso expondría a reclamos legales.
 
 ### Kit de secciones (`src/plantillas/kit/`)

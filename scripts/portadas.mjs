@@ -18,6 +18,7 @@ const temas = {
   marmol: { foto: 'marmol/ceremonia-bn.jpg', fondo: '#f4f2ee', acento: '#141414', texto: '#141414', linea: '#b89a5a', antes: 'Boda moderna', titulo: 'Mármol', fuente: serif, deco: 'linea', gris: true },
   mediterraneo: { foto: 'mediterraneo/playa-abrazo.jpg', fondo: '#fdfcf8', acento: '#1f4e8c', texto: '#22324a', linea: '#f4d35e', antes: 'Boda junto al mar', titulo: 'Mediterráneo', fuente: script, deco: 'azulejo' },
   gala: { foto: 'gala/ramo-rojo.jpg', fondo: '#0e0e0e', acento: '#c9a45c', texto: '#f0dfb1', linea: '#c9a45c', antes: 'Boda art déco', titulo: 'GALA', fuente: serif, deco: 'abanico' },
+  lucha: { foto: 'lucha/ring.jpg', fondo: '#0c0c0f', acento: '#f2b705', texto: '#f1f1f1', linea: '#d7263d', antes: 'La pelea del año', titulo: 'LUCHA', fuente: "Impact, 'DejaVu Sans', sans-serif", deco: 'brillo' },
   bohemia: { foto: 'bohemia/pareja.jpg', fondo: '#f3ebe0', acento: '#8e4c30', texto: '#4a3a30', linea: '#c0714f', antes: 'Boda boho', titulo: 'Bohemia', fuente: script, deco: 'sol', calido: true },
 };
 

@@ -1,0 +1,226 @@
+---
+/**
+ * Lucha: cumpleanos de lucha libre (sin marcas, empresas ni luchadores reales).
+ * Campana y cuerdas -> cinturon de campeon con el nombre + mascara + foto del
+ * ring -> fecha -> promotores -> historia -> cuenta regresiva -> cartelera
+ * (lugares en linea) -> dress code -> regalos -> boleto ringside -> confirmacion
+ * -> ¡K.O.! Reflectores que barren la pagina.
+ */
+import Invitacion from '../../layouts/Invitacion.astro';
+import Confirmacion from '../compartidas/Confirmacion.astro';
+import Base from '../kit/Base.astro';
+import Foto from '../kit/Foto.astro';
+import Fecha from '../kit/Fecha.astro';
+import Familia from '../kit/Familia.astro';
+import Historia from '../kit/Historia.astro';
+import Cuenta from '../kit/Cuenta.astro';
+import Lugares from '../kit/Lugares.astro';
+import Dress from '../kit/Dress.astro';
+import Regalos from '../kit/Regalos.astro';
+import Pase from '../kit/Pase.astro';
+import Cierre from '../kit/Cierre.astro';
+import Portada from './Portada.astro';
+import Cinturon from './Cinturon.astro';
+import Mascara from './Mascara.astro';
+import { extraTexto } from '../kit/extras';
+import { manifiesto } from './manifiesto';
+import type { PropsPlantilla } from '../tipos';
+
+type Props = PropsPlantilla;
+const { evento, invitado, confirmacion } = Astro.props;
+const d = evento.contenido;
+const x = d.extras as Record<string, unknown>;
+const hueco = evento.estado === 'borrador' || confirmacion.modo === 'demo';
+const preset = manifiesto.presets?.find((p) => p.id === evento.preset);
+const linkQr = invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}` : undefined;
+---
+
+<Invitacion
+  titulo={`${d.festejado.nombre} · ${d.tipo}`}
+  descripcion={invitado ? `${invitado.nombre}, ¡suena la campana! Estás invitado a la pelea del año.` : (d.frase ?? d.tipo)}
+  imagen={d.galeria[0] ?? manifiesto.portada}
+  tema="lucha"
+  colorTema={manifiesto.colorTema}
+  variables={preset?.variables}
+  borrador={evento.estado === 'borrador'}
+  musica={d.musica?.archivo}
+>
+  <Base />
+  <Portada nombre={d.festejado.nombre} edad={d.festejado.edad} invitado={invitado?.nombre} />
+
+  <div class="lu-reflectores" aria-hidden="true">
+    <span class="lu-luz lu-luz--a"></span>
+    <span class="lu-luz lu-luz--b"></span>
+  </div>
+
+  <main data-kit>
+    <section class="escena">
+      <div class="contenedor k-centro lu-heroe">
+        <p class="lu-cartel" data-anim="escala">{d.tipo}</p>
+        <h1 class="lu-nombre" data-k-split>{d.festejado.nombre}</h1>
+        {d.festejado.edad && <p class="lu-edad" data-anim="sube"><span>{d.festejado.edad}</span> años · récord invicto</p>}
+        <div class="lu-cinturon" data-lu-cinturon>
+          <Cinturon nombre={d.festejado.nombre} linea={d.festejado.edad ? `CAMPEÓN ${d.festejado.edad} AÑOS` : 'CAMPEÓN'} />
+        </div>
+        {d.frase && <p class="k-texto-suave" data-anim="sube">{d.frase}</p>}
+        <div class="lu-foto" data-anim="sube">
+          <Foto src={d.galeria[0]} forma="rect" hueco={hueco} texto="Tu foto de campeón" />
+          <span class="lu-mascara"><Mascara /></span>
+        </div>
+      </div>
+    </section>
+
+    <Fecha evento={evento} antes="Fecha de" titulo="la pelea" />
+    <Familia anfitriones={d.anfitriones} />
+    <Historia foto={d.galeria[1]} hueco={hueco} antes="¡Entrada triunfal!" texto={extraTexto(x, 'historia')} forma="cuadro" />
+    <Cuenta evento={evento} antes="Faltan" titulo="para la pelea" hoy="¡Hoy es la pelea!" />
+    <Lugares lugares={d.lugares} zona={evento.zonaHoraria} estilo="linea" antes="Esta es" titulo="la cartelera" textoMapa="Cómo llegar" />
+    {
+      d.dressCode && (
+        <Dress titulo={d.dressCode.titulo} nota={d.dressCode.nota} antes="Vestuario">
+          <div style="width:5.5rem"><Mascara /></div>
+        </Dress>
+      )
+    }
+    <Regalos extras={x} antes="Un premio para" titulo="el campeón" />
+    <Pase invitado={invitado} linkQr={linkQr} antes="Boleto ringside" forma="boleto" />
+    <section class="escena">
+      <div class="contenedor k-confirmacion" data-anim="sube">
+        <Confirmacion confirmacion={confirmacion} invitado={invitado} zonaHoraria={evento.zonaHoraria} titulo="¿Subes al ring?" />
+      </div>
+    </section>
+    <Cierre foto={undefined} hueco={false} despedida={d.despedida} hashtag={extraTexto(x, 'hashtag')}>
+      <span class="lu-ko" data-lu-ko>¡K.O.!</span>
+    </Cierre>
+  </main>
+</Invitacion>
+
+<script>
+  import { montarKit, gsap, movimientoReducido } from '../kit/animaciones';
+  document.addEventListener('invitacion:abierta', () => {
+    montarKit({ entradaFoto: 'lados' });
+    if (movimientoReducido()) return;
+    // El cinturon entra girando, como cuando lo levantan en el ring.
+    const cinturon = document.querySelector('[data-lu-cinturon]');
+    if (cinturon) {
+      gsap.from(cinturon, {
+        rotateY: 90,
+        scale: 0.6,
+        opacity: 0,
+        duration: 1.2,
+        ease: 'back.out(1.6)',
+        scrollTrigger: { trigger: cinturon, start: 'top 90%', once: true },
+      });
+    }
+    // ¡K.O.! final: golpe con sacudida.
+    const ko = document.querySelector('[data-lu-ko]');
+    if (ko) {
+      gsap.timeline({ scrollTrigger: { trigger: ko, start: 'top 90%', once: true } })
+        .from(ko, { scale: 3, opacity: 0, duration: 0.35, ease: 'power4.in' })
+        .to('main[data-kit]', { x: 8, duration: 0.05, repeat: 5, yoyo: true, clearProps: 'x' });
+    }
+  });
+</script>
+
+<style is:global>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;700&display=swap');
+
+  html[data-tema='lucha'] {
+    --lu-rojo: #d7263d;
+    --lu-rojo-osc: #8e1424;
+    --lu-oro: #f2b705;
+    --lu-f-titulo: 'Anton', Impact, sans-serif;
+    --lu-f-cuerpo: 'Oswald', system-ui, sans-serif;
+    --c-fondo: #0c0c0f;
+    --c-texto: #f1f1f1;
+    --f-cuerpo: var(--lu-f-cuerpo);
+    --f-titulo: var(--lu-f-titulo);
+  }
+
+  html[data-tema='lucha'] body {
+    background:
+      radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--lu-rojo) 25%, transparent) 0%, transparent 55%),
+      repeating-linear-gradient(0deg, rgb(255 255 255 / 0.02) 0 2px, transparent 2px 6px),
+      #0c0c0f;
+    background-attachment: fixed;
+  }
+
+  html[data-tema='lucha'] [data-kit] {
+    --k-superficie: #16161b;
+    --k-texto: #f1f1f1;
+    --k-suave: #b4b4bd;
+    --k-acento: var(--lu-oro);
+    --k-acento-texto: #111;
+    --k-linea: color-mix(in srgb, var(--lu-oro) 45%, transparent);
+    --k-f-titulo: var(--lu-f-titulo);
+    --k-f-cuerpo: var(--lu-f-cuerpo);
+    --k-f-deco: var(--lu-f-titulo);
+    --k-caps-espaciado: 0.24em;
+    --k-radio: 0.4rem;
+    --k-sombra: 0 0 0 2px var(--lu-rojo), 0 20px 40px -20px rgb(0 0 0 / 0.7);
+    --k-deco-tamano: clamp(2.4rem, 12vw, 3.2rem);
+    --k-cuenta-fondo: var(--lu-rojo);
+    --k-cuenta-num: #fff;
+    --k-cuenta-borde: 2px solid var(--lu-oro);
+    --k-foto-filete: 3px solid var(--lu-oro);
+    --k-radio-boton: 0.3rem;
+  }
+
+  html[data-tema='lucha'] [data-kit] .k-deco { text-transform: uppercase; letter-spacing: 0.02em; text-shadow: 0 3px 0 var(--lu-rojo-osc); }
+  html[data-tema='lucha'] [data-kit] .k-caps { color: var(--lu-oro); font-weight: 700; }
+  html[data-tema='lucha'] .k-confirmacion .conf__control option { color: #111; }
+
+  .lu-reflectores { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .lu-luz {
+    position: absolute;
+    top: -20%;
+    width: 60vw;
+    height: 140%;
+    background: linear-gradient(180deg, rgb(255 250 220 / 0.09), transparent 70%);
+    clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+    transform-origin: top center;
+    animation: lu-barrido 7s ease-in-out infinite alternate;
+  }
+  .lu-luz--a { left: -10%; }
+  .lu-luz--b { right: -10%; animation-delay: -3.5s; }
+  @keyframes lu-barrido { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+
+  .lu-heroe { gap: 0.5rem; }
+  .lu-cartel {
+    margin: 0;
+    padding: 0.4rem 1.2rem;
+    background: var(--lu-oro);
+    font-family: var(--lu-f-titulo);
+    font-size: 1.4rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #111;
+    transform: skewX(-8deg);
+  }
+  .lu-nombre {
+    margin: 0;
+    font-family: var(--lu-f-titulo);
+    font-size: clamp(3.4rem, 19vw, 5.6rem);
+    font-weight: 400;
+    line-height: 1;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 5px 0 var(--lu-rojo), 0 0 30px color-mix(in srgb, var(--lu-rojo) 60%, transparent);
+  }
+  .lu-edad { margin: 0; letter-spacing: 0.14em; text-transform: uppercase; color: #ddd; }
+  .lu-edad span { font-family: var(--lu-f-titulo); font-size: 2.2rem; color: var(--lu-oro); }
+  .lu-cinturon { width: min(21rem, 92vw); margin: 1rem 0; perspective: 800px; }
+  .lu-foto { position: relative; width: min(20rem, 86vw); margin-top: 1rem; }
+  .lu-mascara { position: absolute; right: -1.2rem; bottom: -1.6rem; z-index: 2; width: 5rem; transform: rotate(12deg); }
+  .lu-ko {
+    display: inline-block;
+    padding: 0.4rem 1.4rem;
+    background: var(--lu-rojo);
+    font-family: var(--lu-f-titulo);
+    font-size: 3.4rem;
+    color: #fff;
+    text-shadow: 0 4px 0 #000;
+    transform: rotate(-6deg);
+    box-shadow: 0 0 0 4px var(--lu-oro);
+  }
+</style>

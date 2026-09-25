@@ -12,6 +12,7 @@ import { manifiesto as marmol } from './marmol/manifiesto';
 import { manifiesto as mediterraneo } from './mediterraneo/manifiesto';
 import { manifiesto as gala } from './gala/manifiesto';
 import { manifiesto as bohemia } from './bohemia/manifiesto';
+import { manifiesto as lucha } from './lucha/manifiesto';
 
 /**
  * Registro de MANIFIESTOS (solo datos). Lo usan admin, panel y catalogo.
@@ -35,6 +36,7 @@ const MANIFIESTOS: Manifiesto[] = [
   sakura,
   castillo,
   heroico,
+  lucha,
   galaxia,
   jurasico,
   aracnido,

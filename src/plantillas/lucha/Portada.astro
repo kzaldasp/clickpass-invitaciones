@@ -1,0 +1,180 @@
+---
+/**
+ * El ring visto de frente con tres cuerdas. Al tocar la campana: la campana
+ * vibra, las cuerdas se estiran y salen disparadas hacia los lados y el
+ * presentador anuncia al festejado.
+ */
+interface Props { nombre: string; edad?: number; invitado?: string }
+const { nombre, edad, invitado } = Astro.props;
+---
+
+<div class="portada" data-gate-portada>
+  <span class="reflector reflector--a" aria-hidden="true"></span>
+  <span class="reflector reflector--b" aria-hidden="true"></span>
+
+  <div class="anuncio">
+    <p class="anuncio__esquina" data-p-entra>{invitado ? `¡${invitado}, estás invitado!` : '¡Y en esta esquina…!'}</p>
+    <p class="anuncio__nombre" data-p-entra>{nombre}</p>
+    {edad && <p class="anuncio__edad" data-p-entra>{edad} años · invicto</p>}
+  </div>
+
+  <div class="cuerdas" aria-hidden="true">
+    <span class="cuerda"></span><span class="cuerda"></span><span class="cuerda"></span>
+    <span class="poste poste--izq"></span><span class="poste poste--der"></span>
+  </div>
+
+  <button class="campana" type="button" data-gate-abrir data-p-entra>
+    <svg viewBox="0 0 80 80" aria-hidden="true">
+      <circle cx="40" cy="40" r="34" fill="url(#lu-campana)" stroke="#6b4a00" stroke-width="3" />
+      <circle cx="40" cy="40" r="8" fill="#6b4a00" />
+      <defs><radialGradient id="lu-campana" cx=".35" cy=".3"><stop offset="0" stop-color="#fff3b0" /><stop offset=".6" stop-color="#f2b705" /><stop offset="1" stop-color="#9c6a00" /></radialGradient></defs>
+    </svg>
+    <span>¡Toca la campana!</span>
+  </button>
+</div>
+
+<script>
+  import { entradaPortada } from '../kit/animaciones';
+  entradaPortada(document.querySelector('[data-gate-portada]'));
+</script>
+
+<style>
+  .portada {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 50% 110%, color-mix(in srgb, var(--lu-rojo) 45%, transparent) 0%, transparent 60%),
+      #0c0c0f;
+    opacity: 1;
+  }
+
+  .portada[data-saliendo='true'] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease 1.6s;
+  }
+
+  .reflector {
+    position: absolute;
+    top: -10%;
+    width: 40vw;
+    height: 130%;
+    background: linear-gradient(180deg, rgb(255 255 230 / 0.28), transparent 75%);
+    clip-path: polygon(45% 0, 55% 0, 100% 100%, 0 100%);
+    transform-origin: top center;
+    animation: barrido 4s ease-in-out infinite alternate;
+  }
+
+  .reflector--a { left: 5%; }
+  .reflector--b { right: 5%; animation-delay: -2s; }
+
+  @keyframes barrido { from { transform: rotate(-18deg); } to { transform: rotate(18deg); } }
+
+  .anuncio {
+    position: relative;
+    z-index: 2;
+    margin-bottom: 11.5rem;
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .anuncio__esquina {
+    margin: 0;
+    font-family: var(--lu-f-cuerpo);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #f2b705;
+  }
+
+  .anuncio__nombre {
+    margin: 0;
+    font-family: var(--lu-f-titulo);
+    font-size: clamp(3.4rem, 19vw, 5.6rem);
+    line-height: 1;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 4px 0 var(--lu-rojo), 0 0 30px color-mix(in srgb, var(--lu-rojo) 70%, transparent);
+  }
+
+  .anuncio__edad {
+    margin: 0.3rem 0 0;
+    font-family: var(--lu-f-cuerpo);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #ddd;
+  }
+
+  /* Entre el anuncio y la campana: el centro del contenido esta al 50%. */
+  .cuerdas {
+    position: absolute;
+    inset: calc(50% - 4.6rem) 0 auto;
+    height: 9rem;
+    pointer-events: none;
+  }
+
+  .cuerda {
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    height: 7px;
+    border-radius: 99px;
+    background: linear-gradient(180deg, #fff 0%, #cfcfcf 50%, #8a8a8a 100%);
+    box-shadow: 0 3px 6px rgb(0 0 0 / 0.5);
+  }
+
+  .cuerda:nth-child(1) { top: 0; background: linear-gradient(180deg, #ff6b7a, var(--lu-rojo) 55%, var(--lu-rojo-osc)); }
+  .cuerda:nth-child(2) { top: 3.8rem; }
+  .cuerda:nth-child(3) { top: 7.6rem; background: linear-gradient(180deg, #7fb0ff, #2d6bff 55%, #173a99); }
+
+  .poste {
+    position: absolute;
+    top: -1rem;
+    width: 1.1rem;
+    height: 10rem;
+    border-radius: 0.3rem;
+    background: linear-gradient(90deg, #555, #aaa 50%, #555);
+  }
+
+  .poste--izq { left: 4%; }
+  .poste--der { right: 4%; }
+
+  .campana {
+    position: relative;
+    z-index: 3;
+    display: grid;
+    justify-items: center;
+    gap: 0.4rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #fff;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .campana svg { width: 5rem; animation: invita 2.4s ease-in-out infinite; }
+  .campana span { font-family: var(--lu-f-cuerpo); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  @keyframes invita { 0%, 85%, 100% { transform: rotate(0); } 90% { transform: rotate(-12deg); } 95% { transform: rotate(12deg); } }
+
+  .portada[data-saliendo='true'] .campana svg { animation: suena 0.12s linear 6; }
+  .portada[data-saliendo='true'] .cuerda:nth-child(1) { animation: cuerda-arriba 1s cubic-bezier(0.5, -0.4, 0.8, 0.4) 0.6s forwards; }
+  .portada[data-saliendo='true'] .cuerda:nth-child(2) { animation: cuerda-izq 1s cubic-bezier(0.5, -0.4, 0.8, 0.4) 0.7s forwards; }
+  .portada[data-saliendo='true'] .cuerda:nth-child(3) { animation: cuerda-abajo 1s cubic-bezier(0.5, -0.4, 0.8, 0.4) 0.8s forwards; }
+  .portada[data-saliendo='true'] .anuncio { animation: anuncio 1.4s ease-in-out forwards; }
+
+  @keyframes suena { 50% { transform: rotate(-15deg) scale(1.08); } 100% { transform: rotate(15deg); } }
+  @keyframes cuerda-arriba { 30% { transform: scaleY(2.2) translateY(6px); } 100% { transform: translateY(-60vh) rotate(-8deg); } }
+  @keyframes cuerda-izq { 30% { transform: scaleY(2.2); } 100% { transform: translateX(-120vw) rotate(6deg); } }
+  @keyframes cuerda-abajo { 30% { transform: scaleY(2.2) translateY(-6px); } 100% { transform: translateY(60vh) rotate(8deg); } }
+  @keyframes anuncio { 40% { transform: scale(1.12); } 100% { transform: scale(1.4); opacity: 0; } }
+</style>

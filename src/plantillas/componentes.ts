@@ -12,6 +12,7 @@ import Marmol from './marmol/Plantilla.astro';
 import Mediterraneo from './mediterraneo/Plantilla.astro';
 import Gala from './gala/Plantilla.astro';
 import Bohemia from './bohemia/Plantilla.astro';
+import Lucha from './lucha/Plantilla.astro';
 
 /**
  * Registro de COMPONENTES por version. Solo lo importan las rutas que dibujan
@@ -37,6 +38,7 @@ const VERSIONES: Record<string, Record<number, Componente>> = {
   mediterraneo: { 1: Mediterraneo },
   gala: { 1: Gala },
   bohemia: { 1: Bohemia },
+  lucha: { 1: Lucha },
 };
 
 /** El componente para la version del evento; si ya no existe, la ultima. */
