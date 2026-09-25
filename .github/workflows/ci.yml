@@ -1,0 +1,61 @@
+name: CI y deploy
+
+# En cada push y PR: tipos, pruebas y build.
+# En main, si estan los secretos de Cloudflare y Turso: migra la base y publica.
+on:
+  push:
+    branches: [main, plataforma]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+
+  publicar:
+    needs: verificar
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      # Los secretos no se pueden leer en un `if`: se pasan por env.
+      LISTO: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.TURSO_DATABASE_URL != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Faltan secretos
+        if: env.LISTO != 'true'
+        run: echo "::warning::Configura CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, TURSO_DATABASE_URL y TURSO_AUTH_TOKEN para publicar."
+
+      # Primero la base: el codigo nuevo puede necesitar columnas nuevas.
+      - name: Migrar Turso
+        if: env.LISTO == 'true'
+        run: npm run db:migrate
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+
+      - name: Build y deploy a Cloudflare Workers
+        if: env.LISTO == 'true'
+        run: npm run build && npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

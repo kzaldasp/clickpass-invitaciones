@@ -5,6 +5,11 @@ import cloudflare from '@astrojs/cloudflare';
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
+  vite: {
+    // El build usa su propia cache: si compartiera node_modules/.vite con un
+    // `astro dev` corriendo, le invalidaria las dependencias y daria error 500.
+    cacheDir: process.env.npm_lifecycle_event === 'build' ? 'node_modules/.vite-build' : undefined,
+  },
   adapter: cloudflare({
     // Las ilustraciones llegan como PNG con alfa ya recortado. Se optimizan al
     // hacer build; en runtime no transformamos imagenes.

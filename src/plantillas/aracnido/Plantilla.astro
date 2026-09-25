@@ -61,6 +61,7 @@ const preset = manifiesto.presets?.find((p) => p.id === evento.preset);
       fechaISO={evento.fecha.toISOString()}
       fechaTexto={fechaTexto}
       zona={evento.zonaHoraria}
+      evento={evento}
     />
 
     <Lugares lugares={d.lugares} zona={evento.zonaHoraria} />
@@ -72,7 +73,7 @@ const preset = manifiesto.presets?.find((p) => p.id === evento.preset);
       pases={pases}
       nota={invitado?.nota ?? undefined}
       tipo={d.tipo}
-      token={invitado?.token}
+      linkQr={invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}` : undefined}
     />
 
     <section class="escena">

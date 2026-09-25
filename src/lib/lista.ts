@@ -37,11 +37,12 @@ function columnaDe(celda: string): keyof FilaLista | null {
 }
 
 export function leerLista(texto: string, maxPases = 50): { filas: FilaLista[]; descartadas: number } {
+  // Las lineas NO se recortan: una primera columna vacia empieza con tab, y
+  // quitarlo correria todas las columnas. Se recorta cada celda.
   const lineas = texto
     .replace(/^\uFEFF/, '')
     .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
+    .filter((l) => l.replace(/[\t,;]/g, '').trim());
   if (!lineas.length) return { filas: [], descartadas: 0 };
 
   const sep = separador(lineas[0]);

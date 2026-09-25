@@ -114,6 +114,14 @@ const ejemplo = envioDe(e, { nombre: 'Familia López', token: 'k3x9p2Qa7Z', pase
     )
   }
   {
+    clave === 'pendientes' && cuenta('pendientes') > 0 && puedeEnviar && (
+      <p class="alerta" style="margin-bottom:1.25rem">
+        A quienes ya abrieron su invitación y no responden, el botón <strong>&nbsp;Recordar&nbsp;</strong> les manda un
+        mensaje amable con su link.
+      </p>
+    )
+  }
+  {
     lleno && !bloqueada && (
       <p class="alerta" style="margin-bottom:1.25rem">
         Llegaste al límite de {e.limiteInvitados} invitados. Si necesitas más, escríbenos.
@@ -170,7 +178,9 @@ const ejemplo = envioDe(e, { nombre: 'Familia López', token: 'k3x9p2Qa7Z', pase
           </thead>
           <tbody>
             {filas.map((i) => {
-              const envio = envioDe(e, i, origen);
+              // A quien ya abrio y no responde se le manda un recordatorio, no la invitacion otra vez.
+              const recordar = i.respuesta === 'pendiente' && !!i.abiertoEn;
+              const envio = envioDe(e, i, origen, recordar);
               return (
                 <tr data-nombre={normalizarNombre(i.nombre)}>
                   <td class="tabla__principal">
@@ -200,14 +210,14 @@ const ejemplo = envioDe(e, { nombre: 'Familia López', token: 'k3x9p2Qa7Z', pase
                     <div class="acciones acciones--fin" style="gap:.25rem">
                       {!bloqueada && (
                         <a
-                          class="btn btn--sm btn--primario"
                           href={envio.whatsapp}
                           target="_blank"
                           rel="noopener"
                           aria-disabled={puedeEnviar ? undefined : 'true'}
                           title={i.telefono ? 'Abrir WhatsApp con el mensaje listo' : 'Sin número: elige el contacto en WhatsApp'}
+                          class:list={['btn btn--sm', recordar ? '' : 'btn--primario']}
                         >
-                          <Icono nombre="whatsapp" /> Enviar
+                          <Icono nombre={recordar ? 'campana' : 'whatsapp'} /> {recordar ? 'Recordar' : 'Enviar'}
                         </a>
                       )}
                       <button

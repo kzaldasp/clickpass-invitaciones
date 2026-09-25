@@ -1,4 +1,6 @@
 ---
+import QrEntrada from '../../compartidas/QrEntrada.astro';
+
 /**
  * El pase es la parte que el invitado captura y guarda. Se ve como un boleto
  * troquelado y, cuando el link es nominal, lleva su nombre impreso.
@@ -10,11 +12,11 @@ interface Props {
   pases: string | null;
   nota?: string;
   tipo: string;
-  /** Token del invitado: el QR de entrada lo lleva. */
-  token?: string;
+  /** Link personal: el QR de entrada lo lleva. Solo en links personales. */
+  linkQr?: string;
 }
 
-const { invitado, pases, nota, tipo, token } = Astro.props;
+const { invitado, pases, nota, tipo, linkQr } = Astro.props;
 ---
 
 <section class="escena">
@@ -48,8 +50,16 @@ const { invitado, pases, nota, tipo, token } = Astro.props;
       </div>
     </div>
 
+    {
+      linkQr && (
+        <div class="pase__qr" data-anim="sube" data-anim-retraso="0.25">
+          <QrEntrada link={linkQr} />
+        </div>
+      )
+    }
+
     <p class="pase__aviso" data-anim="sube" data-anim-retraso="0.3">
-      Presenta esta pantalla en la entrada
+      {linkQr ? 'Presenta este código en la entrada' : 'Presenta esta pantalla en la entrada'}
     </p>
   </div>
 </section>
@@ -121,6 +131,13 @@ const { invitado, pases, nota, tipo, token } = Astro.props;
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
+  }
+
+  .pase__qr {
+    --qr-tamano: 9.5rem;
+    display: grid;
+    justify-items: center;
+    margin-block-start: 1.25rem;
   }
 
   .pase__aviso {

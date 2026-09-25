@@ -1,0 +1,50 @@
+---
+/**
+ * "Agregar a mi calendario": Google Calendar (Android) y archivo .ics (iPhone,
+ * Outlook). Lleva la hora exacta en UTC, asi que sirve desde cualquier pais.
+ */
+import type { EventoVista } from '../tipos';
+
+interface Props {
+  evento: EventoVista;
+  class?: string;
+}
+
+const { evento, class: clase } = Astro.props;
+const c = evento.contenido;
+const utc = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+const fin = new Date(evento.fecha.getTime() + 5 * 3_600_000);
+const lugar = c.lugares[0] ? `${c.lugares[0].nombre}, ${c.lugares[0].direccion}` : '';
+
+const google = new URL('https://calendar.google.com/calendar/render');
+google.searchParams.set('action', 'TEMPLATE');
+google.searchParams.set('text', `${c.tipo} · ${c.festejado.nombre}`);
+google.searchParams.set('dates', `${utc(evento.fecha)}/${utc(fin)}`);
+google.searchParams.set('location', lugar);
+google.searchParams.set('details', `${Astro.url.origin}/${evento.slug}`);
+---
+
+<div class:list={['calendario', clase]}>
+  <a href={google.href} target="_blank" rel="noopener">Google Calendar</a>
+  <a href={`/${evento.slug}/calendario.ics`}>iPhone / Outlook</a>
+</div>
+
+<style>
+  :where(.calendario) {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  :where(.calendario a) {
+    padding: 0.55rem 1rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    color: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    opacity: 0.85;
+  }
+</style>

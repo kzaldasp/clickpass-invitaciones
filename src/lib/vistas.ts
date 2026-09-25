@@ -1,4 +1,4 @@
-import { MENSAJE_WHATSAPP } from './config';
+import { MENSAJE_RECORDATORIO, MENSAJE_WHATSAPP } from './config';
 import { rellenar } from './texto';
 import type { Evento, Invitado } from '../db/schema';
 import type { ConfirmacionVista, EventoVista, InvitadoVista, Manifiesto } from '../plantillas/tipos';
@@ -82,10 +82,19 @@ export function vistaDemo(
   return { evento, invitado, confirmacion };
 }
 
-/** Link personal absoluto y mensaje de WhatsApp de un invitado. */
-export function envioDe(e: Evento, i: Pick<Invitado, 'nombre' | 'token' | 'pases' | 'telefono'>, origen: string) {
+/**
+ * Link personal absoluto y mensaje de WhatsApp de un invitado. Con
+ * `recordatorio`, el texto es el de recordar a quien aun no responde.
+ */
+export function envioDe(
+  e: Evento,
+  i: Pick<Invitado, 'nombre' | 'token' | 'pases' | 'telefono'>,
+  origen: string,
+  recordatorio = false,
+) {
   const link = `${origen}/${e.slug}/${i.token}`;
-  const mensaje = rellenar(e.mensajeWhatsapp ?? MENSAJE_WHATSAPP, {
+  const plantilla = recordatorio ? MENSAJE_RECORDATORIO : (e.mensajeWhatsapp ?? MENSAJE_WHATSAPP);
+  const mensaje = rellenar(plantilla, {
     nombre: i.nombre,
     festejado: e.contenido.festejado.nombre,
     pases: i.pases === 1 ? '1 pase' : `${i.pases} pases`,

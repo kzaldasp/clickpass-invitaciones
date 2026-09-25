@@ -1,5 +1,7 @@
 ---
 import EtiquetaZona from '../../compartidas/EtiquetaZona.astro';
+import AgregarCalendario from '../../compartidas/AgregarCalendario.astro';
+import type { EventoVista } from '../../tipos';
 
 /**
  * Cuenta regresiva al instante exacto del evento.
@@ -12,9 +14,10 @@ interface Props {
   fechaTexto: string;
   /** Zona del evento: si el invitado esta en otra, se aclara junto a la fecha. */
   zona: string;
+  evento: EventoVista;
 }
 
-const { fechaISO, fechaTexto, zona } = Astro.props;
+const { fechaISO, fechaTexto, zona, evento } = Astro.props;
 
 const unidades = [
   { clave: 'dias', etiqueta: 'Días' },
@@ -40,6 +43,10 @@ const unidades = [
     </div>
 
     <p class="cuenta__agotada" data-agotada hidden>¡Hoy es el gran día!</p>
+
+    <div class="cuenta__calendario" data-anim="sube">
+      <AgregarCalendario evento={evento} />
+    </div>
   </div>
 </section>
 
@@ -87,6 +94,11 @@ const unidades = [
 </script>
 
 <style>
+  .cuenta__calendario {
+    margin-block-start: 1.5rem;
+    color: var(--c-texto);
+  }
+
   .cuenta__fecha {
     margin-block-end: 1.6rem;
     font-family: var(--f-titulo);

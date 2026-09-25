@@ -1,90 +1,145 @@
 # ClickPass · Invitaciones digitales
 
 Plataforma para vender invitaciones digitales de eventos (bodas, XV años,
-cumpleaños, bautizos…). El cliente elige una plantilla del catálogo, llena sus
+cumpleaños, bautizos…). El cliente elige un diseño del catálogo, llena sus
 datos, sube su lista de invitados y reparte un link personal a cada uno por
-WhatsApp. Los invitados confirman asistencia y el cliente ve las respuestas en su
-panel.
+WhatsApp. Los invitados confirman asistencia y el cliente ve las respuestas en
+su panel. En la puerta, el QR de cada pase marca el ingreso.
 
 Principios:
 
 - **Sencillo y rápido**, para el cliente y para nosotros.
 - **No hacemos SEO.** Las metaetiquetas son para la vista previa de WhatsApp.
-- **Las invitaciones son mobile-first** (390×844). El catálogo, el admin y el
-  panel son responsivos: usan todo el escritorio y se adaptan a móvil.
+- **Las invitaciones son mobile-first** (390×844). Catálogo, admin y panel son
+  responsivos: usan todo el escritorio y se adaptan a móvil.
 - **Un evento nuevo es una fila en la base, no código.** Solo una plantilla
   nueva es código.
 
-> **Estado actual (fase 0).** El sitio que corre hoy sigue siendo estático: los
-> eventos son JSON en `src/content/eventos/` y el tema arácnido vive en
-> `src/themes/`. El schema de la base (`src/db/schema.ts`) ya está listo; la
-> fase 1 migra las invitaciones a SSR leyendo de la base. Ver [Fases](#fases).
+---
+
+## Arrancar en local
+
+Requisitos: Node 22 y la CLI de Turso (`curl -sSfL https://get.tur.so/install.sh | bash`).
+
+```bash
+npm install
+cp .dev.vars.example .dev.vars      # variables para astro dev (corre en workerd)
+npm run db:dev                       # terminal 1: base local en http://127.0.0.1:8880
+npm run db:migrate                   # crea las tablas
+npm run db:seed                      # datos de prueba (admin, 2 clientes, 2 eventos)
+astro dev --background               # http://localhost:4321
+```
+
+Con la semilla:
+
+| Qué | Dónde |
+|---|---|
+| Admin | `/admin` · `admin@clickpass.test` / `clickpass-dev` |
+| Panel de un cliente | `/panel/panelMateo01` |
+| Invitación personal | `/mateo-6-anios/invLopez001` |
+| Evento en borrador | `/ana-y-luis` |
+| Catálogo | `/catalogo` |
+
+Para un admin real: `npm run admin:crear -- correo@dominio.com "Nombre" "clave larga"`.
+
+> Si instalas o quitas dependencias con el servidor corriendo, reinícialo
+> (`astro dev stop`, borra `node_modules/.vite` y vuelve a arrancar): el
+> optimizador de Vite en workerd no se recupera solo.
+
+## Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `astro dev --background` | Servidor local (workerd, igual que producción) |
+| `npm run build` | Build para Cloudflare Workers |
+| `npm run check` | Tipos de Astro y TypeScript |
+| `npm test` | Pruebas de la lógica pura (`tests/`) |
+| `npm run db:dev` | Base libSQL local (`local.db`) en el puerto 8880 |
+| `npm run db:generate` | Crea una migración en `drizzle/` a partir de `src/db/schema.ts` |
+| `npm run db:migrate` | Aplica las migraciones pendientes |
+| `npm run db:studio` | Drizzle Studio para ver y editar la base |
+| `npm run db:seed` | Datos de prueba |
+| `npm run admin:crear` | Crea un admin o cambia su clave |
 
 ---
 
 ## Flujo
 
-1. El cliente nos escribe por WhatsApp y elige una plantilla del **catálogo**.
-2. Creamos el evento en **/admin**: plantilla, cliente, fecha, país y zona
-   horaria, límite de invitados, precio y configuración de la confirmación. El
-   evento nace en `borrador`.
-3. Le mandamos al cliente el **link privado de su panel** (o entra con correo y
-   código).
-4. En el panel, el cliente (o nosotros por él, si prefiere mandarnos los datos)
-   llena los textos, ve la vista previa, sube su **Excel de invitados** y edita
-   el mensaje de WhatsApp.
-5. Cuando paga, pasamos el evento a `publicado` y los links de invitado se
-   activan.
-6. El cliente toca **Enviar** junto a cada invitado. Se abre WhatsApp con el
-   mensaje y el link ya escritos.
-7. El invitado abre su link, ve la invitación con su nombre y **confirma**. Puede
-   cambiar su respuesta hasta la fecha límite.
-8. El cliente ve en su panel quién abrió, quién confirmó y quién falta, y puede
-   exportarlo a CSV.
-9. Pasada la fiesta, tocamos **Finalizar**: se borran invitados y confirmaciones.
-   El link general de la invitación sigue vivo como recuerdo.
+1. El cliente mira el **catálogo** (`/catalogo`) y nos escribe por WhatsApp
+   con el botón "La quiero".
+2. Creamos el evento en **/admin**: cliente, plantilla, paleta, país y zona
+   horaria, fecha, límite de invitados, precio y qué pregunta la confirmación.
+   Nace en `borrador`, con los textos de ejemplo de la plantilla.
+3. Le mandamos el **link privado de su panel** por WhatsApp (botón "Enviar al
+   cliente"), o el cliente entra con su **correo y un código**.
+4. En el panel, el cliente (o nosotros por él) edita los textos, ve la vista
+   previa, **importa su Excel** o pega la lista y ajusta el mensaje de WhatsApp.
+   Nosotros subimos fotos y música desde la ficha del evento.
+5. Cuando paga (registramos los abonos), lo **publicamos** y los links de
+   invitado se activan.
+6. El cliente toca **Enviar** junto a cada invitado: WhatsApp se abre con el
+   mensaje y el link listos. A quien abrió y no responde le toca **Recordar**.
+7. El invitado abre su link, ve su nombre y sus pases, **confirma** y puede
+   agregar el evento a su calendario. Puede cambiar su respuesta hasta la fecha
+   límite.
+8. En la fiesta, quien recibe abre **Entrada con QR** en su celular y escanea
+   el QR de cada pase.
+9. Pasada la fiesta tocamos **Finalizar**: se borran invitados y respuestas. El
+   link general sigue vivo como recuerdo.
 
 ## Decisiones
 
 | Tema | Decisión |
 |---|---|
-| Venta | Asistida. El admin crea el evento; no hay autoservicio ni pago en línea. |
-| Acceso del cliente | Link privado al panel **o** correo con código de un solo uso. |
+| Venta | Asistida. El admin crea el evento; no hay pago en línea. |
+| Acceso del cliente | Link privado `/panel/{token}` **o** correo con código de un solo uso. |
 | Quién llena | El cliente, o el admin por él con el mismo editor. |
-| Qué edita el cliente | Solo textos y datos. Diseño, fotos y música los ponemos nosotros. |
-| Publicación | Nace en `borrador`. Los links de invitado solo funcionan en `publicado`. |
+| Qué edita el cliente | Textos y datos. Diseño, paleta, fotos y música los ponemos nosotros. |
+| Publicación | Nace en `borrador`. Los links de invitado solo abren en `publicado`. |
 | Límite de invitados | Lo fija el admin por evento, según lo que pagó. |
-| Importar Excel | Columnas *Nombre* (obligatoria), *Pases* (por defecto 1) y *Teléfono* (opcional). Reimportar **agrega** y los duplicados se ignoran. |
-| Confirmación | Configurable por evento: pases, mensaje, preguntas extra (texto, opción o sí/no) y fecha límite. |
-| Cambiar respuesta | Permitido hasta la fecha límite. |
+| Importar | Excel/CSV (se convierte en el navegador) o lista pegada. Columnas *Nombre* (obligatoria), *Pases*, *Teléfono*, *Nota*, en cualquier orden. Reimportar **agrega**; los duplicados se ignoran. |
+| Confirmación | Configurable por evento: pases, mensaje, preguntas extra (texto, opción, sí/no) y fecha límite. |
+| Cambiar respuesta | Permitido hasta la fecha límite (o hasta el evento). |
 | Link general | Solo muestra la invitación. Para confirmar hace falta el link personal. |
-| Mensaje de WhatsApp | Editable por el cliente, con `{nombre}` y `{link}`. Se envía con `wa.me`, uno por uno (sin API de WhatsApp). |
-| Cobros | Precio por evento más un historial de pagos (abonos). Saldo = precio − pagos. |
-| Admins | De 1 a 3, todos con los mismos permisos. |
-| Finalizar | Botón manual. Borra invitados y confirmaciones; el evento queda `finalizado`. |
-| Catálogo | `/catalogo` público con las plantillas públicas y una demo de cada una. |
+| WhatsApp | `wa.me` uno por uno, sin API. Mensaje editable con `{nombre}`, `{festejado}`, `{pases}` y `{link}`. |
+| Cobros | Precio por evento más historial de abonos. Saldo = precio − pagos. |
+| Admins | De 1 a 3, todos con los mismos permisos. Entran con correo y clave. |
+| Finalizar | Botón manual. Borra invitados y confirmaciones; conserva pagos, medios y el link general. |
 | País por defecto | Ecuador: `America/Guayaquil`, prefijo `593`, `USD`, `es-EC`. |
+| Stack | Astro (SSR) · Cloudflare Workers · Turso (libSQL) + Drizzle · R2 · Resend · GSAP + Lenis. |
 
 ## Arquitectura
 
-Es **un solo proyecto Astro** con SSR. Todas las zonas comparten la misma base,
-las mismas plantillas y los mismos tipos:
+Un solo proyecto Astro. Todas las zonas comparten base, plantillas y tipos; los
+permisos los resuelve `src/middleware.ts`.
 
 | Ruta | Quién | Qué |
 |---|---|---|
 | `/{evento}` | Cualquiera | Invitación general (sin confirmar) |
-| `/{evento}/{token}` | Invitado | Invitación con su nombre y el formulario de confirmación |
-| `/catalogo` | Cualquiera | Plantillas públicas con su demo |
-| `/panel/...` | Cliente | Editar datos, invitados, envíos y confirmaciones |
-| `/admin/...` | Nosotros | Eventos, clientes, pagos y plantillas |
+| `/{evento}/{token}` | Invitado | Invitación con su nombre, QR y confirmación |
+| `/{evento}/calendario.ics` | Invitado | Evento para el calendario |
+| `/catalogo`, `/catalogo/{plantilla}` | Cualquiera | Diseños públicos y su demo |
+| `/entrar` | Cliente | Login con código por correo |
+| `/panel/{token}/…` | Cliente (y admin) | Resumen, Mi invitación, Invitados, Entrada con QR, CSV |
+| `/admin/…` | Admin | Eventos, clientes, pagos, medios, plantillas |
+| `/api/confirmar` | Invitado | Guarda la respuesta (JSON con JS, redirect sin JS) |
+| `/medios/…` | Cualquiera | Fotos y música desde R2 |
 
-Los permisos se controlan con middleware y no con proyectos separados. Si algún
-día el admin necesita vivir aparte, las carpetas `src/db` y `src/plantillas` se
-extraen a paquetes de un monorepo.
+```
+src/
+  db/            schema.ts (tablas), consultas.ts (lecturas), cliente.ts (Turso por HTTP)
+  lib/           reglas de negocio puras: fechas, telefonos, lista, confirmar, contenido…
+  lib/acciones/  escrituras por dominio: eventos, invitados, pagos, contenido, acceso, entrada
+  lib/cliente/   JS del navegador de la plataforma (popups, toasts, modo oscuro)
+  plantillas/    una carpeta por plantilla + compartidas/ + registro
+  layouts/       Base, Shell (menu lateral), Admin, Panel, Publico, Simple, Invitacion
+  pages/         rutas
+  styles/        plataforma.css (sistema de diseño) y global.css (base de invitaciones)
+```
 
-**Stack:** Astro (SSR) · Turso (libSQL) · Drizzle · Cloudflare Workers · R2 para
-fotos y música · GSAP + Lenis en las invitaciones. Mientras no tengamos dominio,
-usamos `*.workers.dev`. Vercel no sirve: su plan gratis no permite uso comercial.
+Las páginas del admin y del panel procesan sus formularios en el propio
+frontmatter (`POST` → acción → aviso flash → redirect). Si algo falla en un
+formulario largo, la página se vuelve a pintar con lo escrito y el error.
 
 ## Plantillas
 
@@ -92,179 +147,185 @@ Una plantilla es **código**; el contenido de cada evento es **dato**.
 
 ```
 src/plantillas/
-  index.ts              ← registro: una línea por plantilla
+  index.ts             ← registro de MANIFIESTOS (admin, panel, catálogo)
+  componentes.ts       ← registro de COMPONENTES por versión (solo rutas que dibujan invitaciones)
+  tipos.ts             ← el contrato
+  compartidas/         ← Confirmacion, QrEntrada, AgregarCalendario, EtiquetaZona
   aracnido/
     manifiesto.ts
     Plantilla.astro
-    secciones/...
-  compartidas/          ← piezas opcionales: Confirmacion, CuentaRegresiva, Lugares…
+    secciones/…
 ```
 
 ### Contrato mínimo
 
-Crear una plantilla **no exige ningún parámetro de diseño**. La libertad visual
-es total: estructura, fuentes, colores, animación e ilustraciones. Solo hay un
-contrato de entrada y salida.
+Crear una plantilla **no exige ningún parámetro de diseño**. Estructura,
+fuentes, colores, animación e ilustraciones son libres.
 
-**Recibe** tres props:
-- `evento`: contenido, fecha y zona horaria.
-- `invitado?`: presente solo en el link personal.
-- `confirmacion`: la configuración del evento y la respuesta actual del invitado.
+**Recibe** (`PropsPlantilla` en `tipos.ts`):
+- `evento`: contenido, fecha (UTC), zona horaria, estado y paleta elegida.
+- `invitado?`: solo en el link personal (nombre, pases, nota, token).
+- `confirmacion`: modo (`invitado`, `general` o `demo`), config del evento, si
+  está abierta, fecha límite y respuesta actual.
 
-**Declara** un `manifiesto.ts`:
+**Declara** un `manifiesto.ts`: `nombre`, `slug`, `version`, `visibilidad`
+(`publica` o `privada`), `tiposEvento`, `portada` (JPG 1200×630, sirve para el
+catálogo y WhatsApp), `colorTema`, `demo` (contenido, confirmación e invitado de
+ejemplo), y opcionalmente `extras` (campos propios que el editor muestra) y
+`presets` (paletas: variables CSS que el admin elige sin tocar código).
 
-| Campo | Para qué |
-|---|---|
-| `nombre`, `slug`, `version` | Identidad. `version` sube con cada cambio incompatible |
-| `visibilidad` | `publica` (sale en el catálogo) o `privada` (hecha a medida) |
-| `tiposEvento` | Boda, XV, cumpleaños… Sirve para filtrar el catálogo |
-| `portada` | Imagen de la tarjeta del catálogo |
-| `demo` | Contenido de ejemplo para la demo del catálogo y la vista previa |
-| `extras` | Opcional: campos propios, con un tipo simple, que el editor muestra |
+**Obligaciones:**
+- Colocar `<Confirmacion />` en algún lugar. La plantilla decide cómo se ve
+  (variables `--conf-*` o clases `.conf__*`); qué pregunta lo decide el evento.
+- Scopear sus estilos globales bajo `html[data-tema='<slug>']`: todas las
+  plantillas conviven en las mismas rutas.
 
-**Única obligación:** colocar `<Confirmacion />` en algún lugar. La plantilla
-decide cómo se ve; qué pregunta lo decide la configuración del evento. El resto
-de piezas compartidas (`<CuentaRegresiva />`, `<Lugares />`…) son opcionales:
-una plantilla puede usarlas y darles estilo, o hacer las suyas.
+Las demás piezas compartidas son opcionales: `<QrEntrada />` (el QR del pase),
+`<AgregarCalendario />`, `<EtiquetaZona />` ("hora de Ecuador" cuando el
+invitado está en otra zona).
 
-### Reutilizar y personalizar
+**Sumar una plantilla:** crear la carpeta, una línea en `index.ts` y otra en
+`componentes.ts`.
 
-- **Una plantilla a medida** para un cliente se hace como cualquier otra, con
-  `visibilidad: 'privada'`. Cuando la queramos vender a otros, pasa a `publica`
-  y entra al catálogo.
-- **Versionado:** si un cambio rompe el contenido de eventos existentes, se crea
-  una versión nueva. Cada evento guarda `plantilla_version` y no se entera del
-  cambio.
-- **El núcleo del contenido es común** a todas las plantillas (ver
-  `src/lib/contenido.ts`). Por eso un evento puede cambiar de plantilla sin
-  reescribir nada.
+### Reutilizar, personalizar y versionar
+
+- **Paleta distinta** del mismo diseño: un `preset` en el manifiesto. El admin
+  lo elige en "Configurar"; el catálogo lo muestra como muestras de color.
+- **Diseño a medida** para un cliente: una plantilla más con
+  `visibilidad: 'privada'` (solo el admin ve su demo). Para venderla a otros,
+  cámbiala a `publica`.
+- **Cambio incompatible:** sube `version` y deja el componente viejo en
+  `componentes.ts`. Cada evento guarda `plantilla_version` y sigue igual.
+- El **núcleo del contenido** (`src/lib/contenido.ts`) es común a todas: un
+  evento puede cambiar de plantilla sin reescribir nada.
 
 ## Sistema de diseño (catálogo, admin y panel)
 
-Las invitaciones no siguen este sistema: cada plantilla tiene el suyo.
+Las invitaciones no lo usan: cada plantilla trae el suyo. Vive en
+`src/styles/plataforma.css`.
 
-- **Estilo:** minimalista, clásico y moderno. Mucho aire, líneas de 1px, radios
-  pequeños (6–8px), sombras casi nulas. La jerarquía la da la tipografía, no las
-  cajas.
-- **Tipografía:** *Playfair Display* en los títulos (lo clásico) e *Inter* en la
-  interfaz (lo moderno; sus números tabulares alinean tablas y montos).
-- **Color:** neutros cálidos (crema, blanco roto, tinta casi negra) con **verde
-  botella** como acento. El rojo es solo para acciones destructivas. Todo va en
-  tokens CSS en `:root`.
-- **Modo claro u oscuro:** arranca con el del sistema, se puede cambiar y se
-  recuerda. Se aplica con `data-theme` en `<html>`. **El menú lateral es siempre
-  oscuro**: usa sus propios tokens.
-- **Popups** (`<dialog>` nativo) para alertas, confirmaciones ("¿Finalizar
-  evento?", con botón rojo explícito) y formularios cortos (hasta ~4 campos:
-  registrar un pago, agregar un invitado). Los avisos de éxito son toasts.
-- **Formularios largos** (crear o editar un evento, contenido de la invitación):
-  en una página propia con botón de volver.
-- **Responsivo:** en escritorio, menú lateral fijo y contenido a todo el ancho.
-  En móvil, el menú pasa a un cajón con barra superior y las tablas se vuelven
-  tarjetas. El panel del cliente se piensa primero para móvil, porque lo abre
-  desde WhatsApp.
-- **Catálogo:** cuadrícula con filtro por tipo de evento. La demo se abre en un
-  marco de teléfono en escritorio y a pantalla completa en móvil.
+- **Estilo:** minimalista, clásico y moderno. Aire, líneas de 1px, radios de
+  6–12px, sombras casi nulas; la jerarquía la da la tipografía.
+- **Tipografía:** *Playfair Display* en títulos, *Inter* en la interfaz (números
+  tabulares en tablas y montos).
+- **Color:** neutros cálidos con **verde botella** de acento; rojo solo para lo
+  destructivo. Todo son tokens en `:root`.
+- **Claro/oscuro:** sigue al sistema, se cambia con un botón y se recuerda. El
+  **menú lateral es siempre oscuro** (tokens `--lateral-*`).
+- **Popups** (`<dialog>`, `src/components/Dialogo.astro`) para alertas,
+  confirmaciones y formularios cortos; en móvil suben como hoja. **Formularios
+  largos** en página propia con barra de guardar fija. Avisos como **toasts**.
+- **Responsivo:** en escritorio menú fijo y contenido a todo el ancho; en móvil
+  cajón con barra superior y tablas convertidas en tarjetas (`.tabla--tarjetas`).
 
 ## Zona horaria y localización
 
-Un evento puede ser en otro país, y el servidor corre en UTC. Reglas:
-
-- **La base solo guarda instantes UTC.** Lo que escribe el admin o el cliente
-  (`datetime-local`) es **hora local del evento**, y se convierte con
+- **La base solo guarda instantes UTC.** Lo que se escribe en un
+  `datetime-local` es hora local **del evento** y se convierte con
   `localAInstante(fecha, evento.zona_horaria)` (`src/lib/fechas.ts`).
-- **Siempre se muestra en la zona del evento** (`timeZone: evento.zona_horaria`),
-  nunca en la del servidor ni en la del navegador. La cuenta regresiva usa el
-  instante absoluto, así que es correcta desde cualquier país.
-- Al elegir el **país** del evento se sugieren su zona y su prefijo telefónico
-  (`src/lib/config.ts`). La zona se puede cambiar a mano en países con varias.
+- **Siempre se muestra en la zona del evento**, nunca en la del servidor ni en
+  la del navegador. La cuenta regresiva, el `.ics` y Google Calendar usan el
+  instante absoluto.
+- El **país** del evento sugiere zona y prefijo (`src/lib/config.ts`).
 - La **fecha límite de confirmación** usa la misma zona.
 - Las **horas de cada lugar** (`"16:00"`) son hora local del evento.
-- Si el invitado abre la invitación **desde otra zona**, junto a la hora se
-  muestra la etiqueta ("hora de Ecuador").
-- En el admin y el panel, toda fecha de un evento lleva la etiqueta de su zona.
+- Si el invitado está en otra zona, junto a la hora aparece "(hora de Ecuador)".
 
 ## Modelo de datos
 
-Turso con una sola base y schema compartido. Definido en `src/db/schema.ts`; el
-contenido JSON se valida con `src/lib/contenido.ts`.
+Turso, una sola base con schema compartido (`src/db/schema.ts`). El contenido
+JSON se valida con zod (`src/lib/contenido.ts`).
 
 | Tabla | Qué guarda |
 |---|---|
-| `usuarios` | Admins y clientes. El email es opcional: un cliente puede entrar solo con su link privado |
-| `codigos_acceso` | Códigos de un solo uso para entrar por correo (hash, expiración, intentos) |
-| `sesiones` | Sesiones por cookie |
-| `eventos` | Slug, cliente, plantilla y versión, estado, fecha (UTC), zona, país, contenido, config de confirmación, fecha límite, límite de invitados, mensaje de WhatsApp, prefijo telefónico, token del panel, precio y moneda |
-| `invitados` | Token del link, nombre, teléfono, pases, nota, cuándo abrió, respuesta, pases confirmados, mensaje, respuestas extra |
-| `pagos` | Abonos de cada evento: monto, método, fecha y quién lo registró |
+| `usuarios` | Admins (con clave) y clientes (email opcional) |
+| `codigos_acceso` | Códigos por correo (hash, expiración, intentos) |
+| `sesiones` | Sesiones por cookie (se guarda el hash del token) |
+| `eventos` | Slug, cliente, plantilla, versión, paleta, estado, fecha UTC, zona, país, contenido, config de confirmación, fecha límite, límite de invitados, mensaje de WhatsApp, prefijo, token del panel, precio y moneda |
+| `invitados` | Token, nombre, teléfono, pases, nota, cuándo abrió, respuesta, pases confirmados, mensaje, respuestas extra, ingreso con QR |
+| `pagos` | Abonos: monto, método, fecha y quién lo registró |
 
-- Las **plantillas no tienen tabla**: viven en código y `eventos.plantilla`
-  apunta a su slug.
-- **No hay tabla de confirmaciones**: una respuesta por invitado, en su misma
-  fila. Cambiarla la sobrescribe.
-- **Dinero en centavos enteros** y **fechas en UTC**.
+Las plantillas no tienen tabla (viven en código). Una respuesta por invitado, en
+su misma fila. Dinero en centavos enteros.
 
 ## Reglas y casos borde
 
 **Links**
-- Link de invitado con el evento en `borrador` → aviso "Esta invitación aún no
-  está disponible". El link general en borrador muestra la cinta de aviso (sirve
-  de vista previa).
-- Evento `finalizado` → el link de invitado redirige al general, sin formulario.
-- Token inválido → 404 amable, con el estilo de la plataforma.
-- Los tokens son aleatorios (10 caracteres en base62), **nunca el nombre**: así
-  no se pueden adivinar los links de otros invitados.
-- Si el link del panel se filtra, el admin lo regenera y el viejo deja de
-  funcionar.
+- Link personal con el evento en `borrador` → "Tu invitación está en camino".
+  El link general en borrador muestra la cinta de aviso.
+- Evento `finalizado` → cualquier link personal redirige al general.
+- Token inválido o de otro evento → 404.
+- Tokens aleatorios (10 caracteres base62), nunca el nombre.
+- Link del panel filtrado → el admin lo regenera y el viejo muere.
 
 **Confirmación**
-- `pases_confirmados` ≤ `pases`. Si no asiste, queda en 0.
-- Si el evento no pide pases, confirmar "asiste" usa todos los pases del
-  invitado.
-- Pasada la fecha límite, el formulario se cierra y muestra la respuesta que ya
-  dio.
-- Doble envío o dos pestañas → gana la última respuesta.
-- Si se borra una pregunta extra, las respuestas viejas a esa pregunta se
-  ignoran.
-- La primera apertura del link llena `abierto_en`, que separa "no lo ha visto"
-  de "lo vio y no responde".
+- `pases_confirmados` ≤ `pases`; si no asiste, 0. Sin pedir pases, usa todos.
+- Preguntas obligatorias solo si asiste. Opciones fuera de la lista se rechazan.
+- Pasada la fecha límite el formulario se cierra y muestra lo que respondió.
+- Gana la última respuesta. La primera apertura llena `abierto_en`.
+- Sin JS el formulario funciona con POST normal.
 
 **Invitados**
-- Importar por encima del límite → se cargan hasta el tope y se avisa cuántos
-  quedaron fuera.
-- Duplicados (mismo teléfono o mismo nombre normalizado) → se ignoran al
-  reimportar. Los que ya existen no se tocan, para no perder links enviados ni
-  confirmaciones.
-- Teléfonos: se quitan espacios y el 0 inicial, y se antepone el prefijo del
-  evento (`0991234567` → `593991234567`). Si es inválido, el invitado se guarda
-  sin teléfono y sin botón de WhatsApp.
-- Borrar un invitado desactiva su link.
-- El cliente también puede agregar o editar invitados uno por uno (popup).
+- Importar por encima del límite → entran hasta el tope y se avisa.
+- Duplicados (mismo teléfono o nombre normalizado) → se ignoran.
+- Teléfonos: se quita el 0 inicial y se antepone el prefijo del evento; los
+  internacionales (`+57…`, `0057…`) se respetan. Inválido → sin WhatsApp.
+- Bajar los pases de un invitado recorta sus pases confirmados.
+- Sin teléfono, "Enviar" abre WhatsApp para elegir el contacto.
+
+**Entrada**
+- Un invitado ingresa una vez; el segundo escaneo avisa "ya ingresó". Dos
+  celulares en la puerta no lo marcan dos veces.
+- Sin cámara (o sin permiso), se marca a mano desde la lista.
+- En iPhone se usa jsQR (no hay `BarcodeDetector`); se carga solo si hace falta.
+
+**Acceso y seguridad**
+- Códigos por correo: 10 minutos, un solo uso, 5 intentos, máximo 3 envíos cada
+  15 minutos. La respuesta no revela si el correo existe.
+- Sin `RESEND_API_KEY`, el código se imprime en la consola (solo en dev). Resend
+  necesita **dominio verificado** para enviar a cualquiera.
+- Formularios protegidos por el `checkOrigin` de Astro (CSRF). Cookies
+  `httpOnly` y `sameSite=lax`. Nada privado se cachea.
+- El CSV neutraliza celdas que Excel leería como fórmula.
 
 **Contenido y publicación**
-- Las ediciones se ven al instante en todos los links ya enviados. Pero
-  **WhatsApp cachea la vista previa** (título e imagen) de un link ya compartido.
-- Antes de finalizar, se ofrece exportar las confirmaciones a CSV: **el borrado
-  no se puede deshacer**.
-- Finalizar no borra los pagos: el historial de cobros se conserva.
+- Las ediciones se ven al instante en los links ya enviados, pero **WhatsApp
+  cachea la vista previa** de un link ya compartido.
+- Antes de finalizar, exporta el CSV: el borrado no se deshace.
+- Eliminar un evento borra también sus archivos de R2.
 
-**Acceso**
-- El login por correo necesita un dominio verificado para enviar correos (por
-  ejemplo con Resend). Hasta comprar el dominio, solo funciona el link privado.
-- Los códigos por correo expiran y se invalidan tras 5 intentos fallidos.
+## Despliegue (Cloudflare + Turso)
+
+1. **Turso:** `turso db create clickpass` y `turso db tokens create clickpass`.
+2. **R2:** `npx wrangler r2 bucket create clickpass-medios`.
+3. **Secretos del Worker:** `npx wrangler secret put TURSO_DATABASE_URL`
+   (y `TURSO_AUTH_TOKEN`, `CONTACTO_WHATSAPP`, `RESEND_API_KEY`).
+4. **Primer deploy a mano:** `TURSO_DATABASE_URL=… TURSO_AUTH_TOKEN=… npm run db:migrate`,
+   luego `npm run build && npx wrangler deploy`, y crea el admin con
+   `npm run admin:crear` apuntando a Turso.
+5. **Automático:** `.github/workflows/ci.yml` verifica cada push y, en `main`,
+   migra y publica si existen los secretos de GitHub `CLOUDFLARE_API_TOKEN`,
+   `CLOUDFLARE_ACCOUNT_ID`, `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN`.
+
+Mientras no haya dominio propio, el sitio vive en `clickpass.<cuenta>.workers.dev`.
 
 ## Fases
 
-| Fase | Qué incluye |
-|---|---|
-| **0** ✅ | Planteamiento (este README), schema de la base, utilidades de fechas y tokens |
-| **1** | SSR con adaptador de Cloudflare. Invitación y confirmación leídas de la base. Migrar el tema arácnido a `src/plantillas/`. Panel del cliente (link privado): editar, importar Excel, enviar y ver confirmaciones. Admin mínimo: eventos, clientes, pagos y finalizar |
-| **2** | Catálogo público con demos, login por correo (con dominio propio), subida de fotos y música a R2, imagen OG por evento |
-| **3** | Presets de color sin código, QR de entrada, recordatorios y otros extras |
+| Fase | Estado | Qué incluye |
+|---|---|---|
+| 0 | ✅ | Planteamiento, schema, utilidades de fechas y tokens |
+| 1 | ✅ | SSR en Workers, invitación y confirmación desde la base, contrato de plantillas, panel (editor, invitados, importar, WhatsApp, CSV, vista previa) y admin (eventos, publicar, finalizar, pagos, clientes, plantillas) |
+| 2 | ✅ | Catálogo público con demos y paletas, login por correo, fotos y música en R2, imagen OG por evento |
+| 3 | ✅ | Paletas sin código, QR de entrada con escáner, recordatorios, agregar al calendario |
+
+Pendiente fuera del código: comprar el dominio, verificarlo en Resend, las
+ilustraciones finales del tema arácnido (ver
+[docs/ilustraciones.md](docs/ilustraciones.md)) y el número de WhatsApp de
+ventas (`CONTACTO_WHATSAPP`).
 
 ---
 
-## Animación
+## Animación de las invitaciones
 
 - **GSAP** (gratis desde 2025, todos los plugins incluidos) para la coreografía.
 - **Lenis** para el scroll con inercia.
@@ -286,22 +347,9 @@ El motor vive en `src/lib/escena.ts`. Reglas que sostiene:
 Ver [docs/ilustraciones.md](docs/ilustraciones.md) para los prompts listos para
 generar y el flujo de recorte.
 
-Van en `public/ilustraciones/<tema>/` como PNG con canal alfa. Las rutas se
-declaran una sola vez, en la constante `ILUSTRACIONES` de cada tema.
+Van en `public/ilustraciones/<plantilla>/` como PNG con canal alfa. Las rutas se
+declaran una sola vez, en la constante `ILUSTRACIONES` de cada plantilla. La
+portada del catálogo se regenera con `node scripts/portada-aracnido.mjs`.
 
 Los SVG (telarañas, hilos) se dibujan en código: pesan nada, se recolorean con
 CSS y GSAP puede animarlos trazo por trazo.
-
-## Comandos
-
-| Comando | Qué hace |
-|---|---|
-| `npm run dev` | Servidor local |
-| `npm run build` | Genera `dist/`. Valida todos los JSON de paso |
-| `npm run preview` | Sirve el build |
-| `npm run db:generate` | Crea una migración en `drizzle/` a partir de `src/db/schema.ts` |
-| `npm run db:migrate` | Aplica las migraciones pendientes (en local, a `local.db`) |
-| `npm run db:studio` | Abre Drizzle Studio para ver y editar la base |
-
-Para la base local, copia `.env.example` a `.env`. Por defecto usa
-`file:local.db`, sin cuenta de Turso.

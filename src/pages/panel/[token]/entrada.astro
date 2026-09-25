@@ -1,0 +1,321 @@
+---
+/**
+ * Entrada con QR: se abre en el celular de quien recibe a los invitados.
+ * Escanea el QR del pase y marca el ingreso. Tambien permite marcar a mano
+ * (invitado sin celular, pantalla rota).
+ */
+import Panel from '../../../layouts/Panel.astro';
+import Icono from '../../../components/Icono.astro';
+import { estadisticasDe, invitadosDe } from '../../../db/consultas';
+import { deshacerIngreso, marcarIngresoManual, registrarIngreso, tokenDeQr } from '../../../lib/acciones/entrada';
+import { ponerAviso } from '../../../lib/aviso';
+import { fechaCorta } from '../../../lib/fechas';
+import { texto } from '../../../lib/formularios';
+import { normalizarNombre } from '../../../lib/texto';
+
+const e = Astro.locals.evento!;
+const aqui = `/panel/${e.tokenPanel}/entrada`;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const accion = texto(form, '_accion', 20);
+
+  // Escaneo desde la camara: responde JSON, la pagina no se recarga.
+  if (accion === 'escaneo') {
+    if (e.estado === 'finalizado') return Response.json({ estado: 'desconocido' });
+    const token = tokenDeQr(texto(form, 'qr', 500));
+    return Response.json(token ? await registrarIngreso(e, token) : { estado: 'desconocido' });
+  }
+  if (accion === 'marcar') await marcarIngresoManual(e, texto(form, 'id', 64));
+  if (accion === 'deshacer') {
+    await deshacerIngreso(e, texto(form, 'id', 64));
+    ponerAviso(Astro.cookies, 'Ingreso deshecho.', 'info');
+  }
+  return Astro.redirect(aqui);
+}
+
+const [stats, lista] = await Promise.all([estadisticasDe(e.id), invitadosDe(e.id)]);
+// Primero los que confirmaron y aun no llegan.
+const orden = { asiste: 0, pendiente: 1, no_asiste: 2 } as const;
+const filas = [...lista].sort(
+  (a, b) =>
+    Number(!!a.ingresadoEn) - Number(!!b.ingresadoEn) ||
+    orden[a.respuesta] - orden[b.respuesta] ||
+    a.nombre.localeCompare(b.nombre),
+);
+---
+
+<Panel titulo="Entrada">
+  <header class="cabecera">
+    <div class="cabecera__texto">
+      <h1>Entrada con QR</h1>
+      <p class="suave">Abre esta página en el celular de quien recibe a los invitados y escanea el QR de cada pase.</p>
+    </div>
+  </header>
+
+  <div class="dos-columnas">
+    <div class="pila pila--lg">
+      <section class="tarjeta pila escaner" data-escaner data-accion={aqui}>
+        <div class="escaner__visor">
+          <video playsinline muted data-video></video>
+          <div class="escaner__marco" aria-hidden="true"></div>
+          <p class="escaner__apagado" data-apagado>La cámara está apagada</p>
+        </div>
+        <div class="escaner__resultado" data-resultado hidden aria-live="assertive"></div>
+        <button type="button" class="btn btn--primario btn--bloque" data-iniciar>
+          <Icono nombre="qr" /> Escanear
+        </button>
+        <p class="campo__ayuda" data-error hidden></p>
+      </section>
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat__valor num" data-ingresados>{stats.ingresados}</span>
+          <span class="stat__etiqueta">Ingresaron</span>
+        </div>
+        <div class="stat">
+          <span class="stat__valor num">{stats.asisten}</span>
+          <span class="stat__etiqueta">Confirmaron · {stats.pasesConfirmados} personas</span>
+        </div>
+      </div>
+    </div>
+
+    <aside class="tarjeta pila">
+      <h2>Lista</h2>
+      <input class="input" type="search" placeholder="Buscar invitado" data-buscar aria-label="Buscar invitado" />
+      <ul class="lista-entrada" data-lista>
+        {
+          filas.map((i) => (
+            <li data-nombre={normalizarNombre(i.nombre)}>
+              <div>
+                <strong>{i.nombre}</strong>
+                <span class="pequeno suave" style="display:block">
+                  {i.respuesta === 'asiste'
+                    ? `Confirmó ${i.pasesConfirmados} de ${i.pases}`
+                    : i.respuesta === 'no_asiste'
+                      ? 'Dijo que no asistiría'
+                      : `Sin responder · ${i.pases === 1 ? '1 pase' : `${i.pases} pases`}`}
+                  {i.ingresadoEn && ` · entró ${fechaCorta(i.ingresadoEn, e.zonaHoraria).split(', ').pop()}`}
+                </span>
+              </div>
+              <form method="post">
+                <input type="hidden" name="id" value={i.id} />
+                {i.ingresadoEn ? (
+                  <button class="btn btn--sm btn--fantasma" name="_accion" value="deshacer" type="submit">
+                    Deshacer
+                  </button>
+                ) : (
+                  <button class="btn btn--sm" name="_accion" value="marcar" type="submit">
+                    <Icono nombre="check" /> Ingresó
+                  </button>
+                )}
+              </form>
+            </li>
+          ))
+        }
+      </ul>
+    </aside>
+  </div>
+</Panel>
+
+<script>
+  import { toast } from '../../../lib/cliente/plataforma';
+
+  interface Resultado {
+    estado: 'ok' | 'repetido' | 'desconocido';
+    nombre?: string;
+    pasesConfirmados?: number;
+    pases?: number;
+    respuesta?: string;
+    ingresoEn?: string;
+  }
+
+  const raiz = document.querySelector<HTMLElement>('[data-escaner]')!;
+  const video = raiz.querySelector<HTMLVideoElement>('[data-video]')!;
+  const apagado = raiz.querySelector<HTMLElement>('[data-apagado]')!;
+  const resultado = raiz.querySelector<HTMLElement>('[data-resultado]')!;
+  const boton = raiz.querySelector<HTMLButtonElement>('[data-iniciar]')!;
+  const errorEl = raiz.querySelector<HTMLElement>('[data-error]')!;
+  const ingresados = document.querySelector<HTMLElement>('[data-ingresados]');
+
+  let flujo: MediaStream | null = null;
+  let pausado = false;
+  let ultimo = '';
+
+  // BarcodeDetector (Android/Chrome) o jsQR (iPhone), cargado solo si hace falta.
+  type Detector = (v: HTMLVideoElement) => Promise<string | null>;
+  async function crearDetector(): Promise<Detector> {
+    const BD = (window as unknown as { BarcodeDetector?: new (o: object) => { detect(v: HTMLVideoElement): Promise<{ rawValue: string }[]> } }).BarcodeDetector;
+    if (BD) {
+      const d = new BD({ formats: ['qr_code'] });
+      return async (v) => (await d.detect(v))[0]?.rawValue ?? null;
+    }
+    const { default: jsQR } = await import('jsqr');
+    const lienzo = document.createElement('canvas');
+    const ctx = lienzo.getContext('2d', { willReadFrequently: true })!;
+    return async (v) => {
+      lienzo.width = v.videoWidth;
+      lienzo.height = v.videoHeight;
+      ctx.drawImage(v, 0, 0);
+      const img = ctx.getImageData(0, 0, lienzo.width, lienzo.height);
+      return jsQR(img.data, img.width, img.height)?.data ?? null;
+    };
+  }
+
+  function mostrar(r: Resultado) {
+    const textos = {
+      ok: `✓ ${r.nombre}` + (r.respuesta === 'asiste' ? ` · ${r.pasesConfirmados} de ${r.pases} pases` : ' · no había confirmado'),
+      repetido: `⚠ ${r.nombre} ya había ingresado` + (r.ingresoEn ? ` (${new Date(r.ingresoEn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` : ''),
+      desconocido: '✕ Este QR no es de este evento',
+    };
+    resultado.textContent = textos[r.estado];
+    resultado.dataset.estado = r.estado;
+    resultado.hidden = false;
+    navigator.vibrate?.(r.estado === 'ok' ? 80 : [60, 60, 60]);
+    if (r.estado === 'ok' && ingresados) ingresados.textContent = String(Number(ingresados.textContent) + 1);
+  }
+
+  async function enviar(qr: string) {
+    const datos = new FormData();
+    datos.set('_accion', 'escaneo');
+    datos.set('qr', qr);
+    const res = await fetch(raiz.dataset.accion!, { method: 'POST', body: datos });
+    mostrar((await res.json()) as Resultado);
+  }
+
+  async function iniciar() {
+    errorEl.hidden = true;
+    try {
+      flujo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    } catch {
+      errorEl.textContent = 'No se pudo abrir la cámara. Revisa el permiso del navegador o marca los ingresos en la lista.';
+      errorEl.hidden = false;
+      return;
+    }
+    video.srcObject = flujo;
+    await video.play();
+    apagado.hidden = true;
+    boton.textContent = 'Detener';
+    const detectar = await crearDetector();
+
+    const ciclo = async () => {
+      if (!flujo) return;
+      if (!pausado && video.readyState >= 2) {
+        try {
+          const valor = await detectar(video);
+          // El mismo QR frente a la camara no se envia en bucle.
+          if (valor && valor !== ultimo) {
+            ultimo = valor;
+            pausado = true;
+            await enviar(valor);
+            setTimeout(() => {
+              pausado = false;
+              ultimo = '';
+            }, 2500);
+          }
+        } catch {
+          toast('No se pudo leer el código', 'error');
+        }
+      }
+      requestAnimationFrame(ciclo);
+    };
+    requestAnimationFrame(ciclo);
+  }
+
+  function detener() {
+    flujo?.getTracks().forEach((t) => t.stop());
+    flujo = null;
+    video.srcObject = null;
+    apagado.hidden = false;
+    boton.innerHTML = 'Escanear';
+  }
+
+  boton.addEventListener('click', () => (flujo ? detener() : iniciar()));
+
+  const buscar = document.querySelector<HTMLInputElement>('[data-buscar]');
+  buscar?.addEventListener('input', () => {
+    const q = buscar.value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    document.querySelectorAll<HTMLElement>('[data-lista] li').forEach((li) => {
+      li.hidden = !!q && !li.dataset.nombre!.includes(q);
+    });
+  });
+</script>
+
+<style>
+  .escaner__visor {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1;
+    max-height: 60vh;
+    border-radius: var(--r);
+    background: #0d0f0e;
+  }
+
+  .escaner__visor video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .escaner__marco {
+    position: absolute;
+    inset: 18%;
+    border: 2px solid rgb(255 255 255 / 0.85);
+    border-radius: 14px;
+    box-shadow: 0 0 0 999px rgb(0 0 0 / 0.35);
+  }
+
+  .escaner__apagado {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: rgb(255 255 255 / 0.7);
+    font-size: 0.9rem;
+  }
+
+  .escaner__resultado {
+    padding: 1rem;
+    border-radius: var(--r);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .escaner__resultado[data-estado='ok'] {
+    background: var(--exito-suave);
+    color: var(--exito);
+  }
+
+  .escaner__resultado[data-estado='repetido'] {
+    background: var(--aviso-suave);
+    color: var(--aviso);
+  }
+
+  .escaner__resultado[data-estado='desconocido'] {
+    background: var(--peligro-suave);
+    color: var(--peligro);
+  }
+
+  .lista-entrada {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 32rem;
+    overflow-y: auto;
+  }
+
+  .lista-entrada li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .lista-entrada li:last-child {
+    border-bottom: 0;
+  }
+</style>

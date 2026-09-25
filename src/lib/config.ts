@@ -46,6 +46,10 @@ export type TipoEvento = keyof typeof TIPOS_EVENTO;
  */
 export const MENSAJE_WHATSAPP = '¡Hola {nombre}! Tienes una invitación de {festejado} ✨\nÁbrela aquí y confirma tu asistencia: {link}';
 
+/** Recordatorio amable para quien aun no responde. Mismas variables. */
+export const MENSAJE_RECORDATORIO =
+  '¡Hola {nombre}! Te recordamos la invitación de {festejado} 😊 ¿Nos confirmas si puedes acompañarnos? {link}';
+
 /** Slugs que no puede tomar un evento: son rutas de la plataforma. */
 export const SLUGS_RESERVADOS = [
   'admin',
