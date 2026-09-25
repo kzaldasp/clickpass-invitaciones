@@ -1,0 +1,1 @@
+globalThis.process??={},globalThis.process.env??={};import{t as e}from"./plataforma.DAlBwH2c.js";e();

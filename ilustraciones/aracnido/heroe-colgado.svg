@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 360" width="260" height="360" role="img" aria-label="Placeholder de heroe colgado">
+  <!--
+    PLACEHOLDER. Sustituir por heroe-colgado.png (recortado, con alfa).
+    El punto de agarre esta en (130, 8): ahi lo ancla MotionPath.
+  -->
+  <defs>
+    <linearGradient id="traje" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e23636"/>
+      <stop offset="100%" stop-color="#9c1d1d"/>
+    </linearGradient>
+    <linearGradient id="piernas" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2e4da7"/>
+      <stop offset="100%" stop-color="#1b2a6b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- brazo que sostiene -->
+  <path d="M130 8 L130 120" stroke="#e23636" stroke-width="20" stroke-linecap="round" fill="none"/>
+
+  <!-- torso -->
+  <ellipse cx="130" cy="176" rx="46" ry="58" fill="url(#traje)"/>
+
+  <!-- cadera y piernas dobladas -->
+  <path d="M104 224 C92 268 108 292 88 330" stroke="url(#piernas)" stroke-width="26" stroke-linecap="round" fill="none"/>
+  <path d="M156 224 C170 266 154 296 176 332" stroke="url(#piernas)" stroke-width="26" stroke-linecap="round" fill="none"/>
+
+  <!-- brazo libre -->
+  <path d="M168 150 C198 168 202 196 190 222" stroke="url(#traje)" stroke-width="18" stroke-linecap="round" fill="none"/>
+
+  <!-- cabeza invertida: cuelga, asi que la mascara mira hacia abajo -->
+  <circle cx="130" cy="118" r="34" fill="url(#traje)"/>
+  <path d="M112 126 C106 112 118 104 128 110 C134 114 132 124 124 128 Z" fill="#f3f0ea" opacity="0.92"/>
+  <path d="M148 126 C154 112 142 104 132 110 C126 114 128 124 136 128 Z" fill="#f3f0ea" opacity="0.92"/>
+
+  <!-- marca de placeholder, desaparece al llegar el PNG real -->
+  <g opacity="0.5">
+    <rect x="70" y="342" width="120" height="16" rx="8" fill="#0a0a14"/>
+    <text x="130" y="354" font-family="monospace" font-size="10" fill="#f5c451" text-anchor="middle">PLACEHOLDER</text>
+  </g>
+</svg>
