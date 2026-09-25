@@ -50,7 +50,7 @@ const { nombre, edad, invitado } = Astro.props;
     overflow: hidden;
     background:
       radial-gradient(ellipse at 50% 110%, color-mix(in srgb, var(--lu-rojo) 45%, transparent) 0%, transparent 60%),
-      #0c0c0f;
+      #050505;
     opacity: 1;
   }
 
@@ -92,7 +92,7 @@ const { nombre, edad, invitado } = Astro.props;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #f2b705;
+    color: var(--lu-rojo);
   }
 
   .anuncio__nombre {
@@ -133,7 +133,7 @@ const { nombre, edad, invitado } = Astro.props;
 
   .cuerda:nth-child(1) { top: 0; background: linear-gradient(180deg, #ff6b7a, var(--lu-rojo) 55%, var(--lu-rojo-osc)); }
   .cuerda:nth-child(2) { top: 3.8rem; }
-  .cuerda:nth-child(3) { top: 7.6rem; background: linear-gradient(180deg, #7fb0ff, #2d6bff 55%, #173a99); }
+  .cuerda:nth-child(3) { top: 7.6rem; background: linear-gradient(180deg, #ff6b7a, var(--lu-rojo) 55%, var(--lu-rojo-osc)); }
 
   .poste {
     position: absolute;

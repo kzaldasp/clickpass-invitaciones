@@ -126,12 +126,13 @@ const linkQr = invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}`
   @import url('https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;700&display=swap');
 
   html[data-tema='lucha'] {
-    --lu-rojo: #d7263d;
-    --lu-rojo-osc: #8e1424;
-    --lu-oro: #f2b705;
+    /* Negro, blanco y rojo intenso. El dorado queda solo para el cinturon. */
+    --lu-rojo: #d0021b;
+    --lu-rojo-osc: #7a0010;
+    --lu-acento: #ffffff;
     --lu-f-titulo: 'Anton', Impact, sans-serif;
     --lu-f-cuerpo: 'Oswald', system-ui, sans-serif;
-    --c-fondo: #0c0c0f;
+    --c-fondo: #050505;
     --c-texto: #f1f1f1;
     --f-cuerpo: var(--lu-f-cuerpo);
     --f-titulo: var(--lu-f-titulo);
@@ -141,7 +142,7 @@ const linkQr = invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}`
     background:
       radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--lu-rojo) 25%, transparent) 0%, transparent 55%),
       repeating-linear-gradient(0deg, rgb(255 255 255 / 0.02) 0 2px, transparent 2px 6px),
-      #0c0c0f;
+      #050505;
     background-attachment: fixed;
   }
 
@@ -149,9 +150,9 @@ const linkQr = invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}`
     --k-superficie: #16161b;
     --k-texto: #f1f1f1;
     --k-suave: #b4b4bd;
-    --k-acento: var(--lu-oro);
-    --k-acento-texto: #111;
-    --k-linea: color-mix(in srgb, var(--lu-oro) 45%, transparent);
+    --k-acento: var(--lu-rojo);
+    --k-acento-texto: #fff;
+    --k-linea: rgb(255 255 255 / 0.22);
     --k-f-titulo: var(--lu-f-titulo);
     --k-f-cuerpo: var(--lu-f-cuerpo);
     --k-f-deco: var(--lu-f-titulo);
@@ -159,15 +160,18 @@ const linkQr = invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}`
     --k-radio: 0.4rem;
     --k-sombra: 0 0 0 2px var(--lu-rojo), 0 20px 40px -20px rgb(0 0 0 / 0.7);
     --k-deco-tamano: clamp(2.4rem, 12vw, 3.2rem);
-    --k-cuenta-fondo: var(--lu-rojo);
+    --k-cuenta-fondo: #000;
     --k-cuenta-num: #fff;
-    --k-cuenta-borde: 2px solid var(--lu-oro);
-    --k-foto-filete: 3px solid var(--lu-oro);
+    --k-cuenta-borde: 2px solid var(--lu-rojo);
+    --k-foto-filete: 3px solid var(--lu-acento);
     --k-radio-boton: 0.3rem;
   }
 
-  html[data-tema='lucha'] [data-kit] .k-deco { text-transform: uppercase; letter-spacing: 0.02em; text-shadow: 0 3px 0 var(--lu-rojo-osc); }
-  html[data-tema='lucha'] [data-kit] .k-caps { color: var(--lu-oro); font-weight: 700; }
+  html[data-tema='lucha'] [data-kit] .k-deco { color: var(--lu-acento); text-transform: uppercase; letter-spacing: 0.02em; text-shadow: 0 4px 0 var(--lu-rojo); }
+  /* Rojo aclarado en textos chicos: el rojo puro sobre negro no se lee bien a este tamano. */
+  html[data-tema='lucha'] [data-kit] .k-caps { color: color-mix(in srgb, var(--lu-rojo) 70%, white); font-weight: 700; }
+  html[data-tema='lucha'] [data-kit] .kcuenta__cal { color: var(--lu-acento); }
+  html[data-tema='lucha'] [data-kit] .k-boton--linea { color: var(--lu-acento); border-color: var(--lu-rojo); }
   html[data-tema='lucha'] .k-confirmacion .conf__control option { color: #111; }
 
   .lu-reflectores { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
@@ -189,12 +193,12 @@ const linkQr = invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}`
   .lu-cartel {
     margin: 0;
     padding: 0.4rem 1.2rem;
-    background: var(--lu-oro);
+    background: var(--lu-rojo);
     font-family: var(--lu-f-titulo);
     font-size: 1.4rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #111;
+    color: #fff;
     transform: skewX(-8deg);
   }
   .lu-nombre {
@@ -208,7 +212,7 @@ const linkQr = invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}`
     text-shadow: 0 5px 0 var(--lu-rojo), 0 0 30px color-mix(in srgb, var(--lu-rojo) 60%, transparent);
   }
   .lu-edad { margin: 0; letter-spacing: 0.14em; text-transform: uppercase; color: #ddd; }
-  .lu-edad span { font-family: var(--lu-f-titulo); font-size: 2.2rem; color: var(--lu-oro); }
+  .lu-edad span { font-family: var(--lu-f-titulo); font-size: 2.2rem; color: var(--lu-rojo); }
   .lu-cinturon { width: min(21rem, 92vw); margin: 1rem 0; perspective: 800px; }
   .lu-foto { position: relative; width: min(20rem, 86vw); margin-top: 1rem; }
   .lu-mascara { position: absolute; right: -1.2rem; bottom: -1.6rem; z-index: 2; width: 5rem; transform: rotate(12deg); }
@@ -221,6 +225,6 @@ const linkQr = invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}`
     color: #fff;
     text-shadow: 0 4px 0 #000;
     transform: rotate(-6deg);
-    box-shadow: 0 0 0 4px var(--lu-oro);
+    box-shadow: 0 0 0 4px var(--lu-acento);
   }
 </style>

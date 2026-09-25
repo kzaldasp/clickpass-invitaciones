@@ -9,7 +9,7 @@ export const manifiesto: Manifiesto = {
   visibilidad: 'publica',
   tiposEvento: ['infantil', 'cumpleanos'],
   portada: '/ilustraciones/lucha/portada.jpg',
-  colorTema: '#0c0c0f',
+  colorTema: '#050505',
   extras: EXTRAS_COMUNES,
   demo: {
     diasHastaEvento: 24,
@@ -32,8 +32,8 @@ export const manifiesto: Manifiesto = {
     invitado: { nombre: 'El Rayo Martín', pases: 2 },
   },
   presets: [
-    { id: 'rojo', nombre: 'Rojo y oro', muestra: '#d7263d', variables: {} },
+    { id: 'clasico', nombre: 'Negro, blanco y rojo', muestra: '#d0021b', variables: {} },
+    { id: 'oro', nombre: 'Rojo y oro', muestra: '#f2b705', variables: { '--lu-acento': '#f2b705' } },
     { id: 'azul', nombre: 'Azul eléctrico', muestra: '#2d6bff', variables: { '--lu-rojo': '#2d6bff', '--lu-rojo-osc': '#173a99' } },
-    { id: 'verde', nombre: 'Verde y oro', muestra: '#1fa35c', variables: { '--lu-rojo': '#1fa35c', '--lu-rojo-osc': '#0f5c33' } },
   ],
 };
