@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1790357538151,
+      "tag": "0000_yummy_sumo",
+      "breakpoints": true
+    }
+  ]
+}

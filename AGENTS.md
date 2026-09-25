@@ -1,16 +1,24 @@
 # ClickPass · Invitaciones digitales
 
 Invitaciones de evento (cumpleaños, bodas, XV) en Astro. Se abren desde WhatsApp
-en un teléfono. Lee `README.md` para el modelo de datos y `docs/ilustraciones.md`
+en un teléfono. Lee `README.md` para el producto, las decisiones y el modelo de datos y `docs/ilustraciones.md`
 para el flujo de arte.
 
 ## Reglas del proyecto
 
 - **No hacemos SEO.** Las metaetiquetas que hay son para el preview de WhatsApp.
   Lo que importa es lo visual, la animación y la experiencia en móvil.
-- **Mobile-first literal.** Diseña a 390x844. El escritorio es el caso raro.
-- **Datos separados del tema.** Un evento nuevo es un JSON, no código. Si algo
-  se va a repetir entre eventos, va al schema, no hardcodeado en el tema.
+- **Invitaciones mobile-first literal.** Diseña a 390x844. Catálogo, admin y
+  panel son responsivos (escritorio completo y móvil); ver "Sistema de diseño"
+  en el README.
+- **Datos separados de la plantilla.** Un evento nuevo es una fila en la base
+  (`src/db/schema.ts`), no código. Si algo se va a repetir entre eventos, va al
+  schema o a `src/lib/contenido.ts`, no hardcodeado en la plantilla.
+- **Fechas en UTC, mostradas en la zona del evento.** Nunca la del servidor ni
+  la del navegador. Conversión en `src/lib/fechas.ts`; Ecuador por defecto
+  (`src/lib/config.ts`).
+- **Plantillas sin parámetros de diseño.** Libertad visual total; el contrato es
+  solo props de entrada, `manifiesto.ts` y colocar `<Confirmacion />`.
 - **Nada se rompe sin JS.** Los estados ocultos de animación viven bajo `.js`.
 - **`prefers-reduced-motion` se respeta siempre**, y la sección encoge cuando el
   recorrido de scroll deja de tener sentido.

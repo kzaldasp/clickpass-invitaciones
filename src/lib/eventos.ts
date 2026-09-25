@@ -1,4 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
+import { POR_DEFECTO } from './config';
 
 export type Evento = CollectionEntry<'eventos'>;
 export type DatosEvento = Evento['data'];
@@ -23,7 +24,7 @@ const capitalizar = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /** "sábado 14 de noviembre de 2026" -> "Sábado 14 de noviembre de 2026" */
 export function fechaLarga(fecha: Date, zonaHoraria: string): string {
   return capitalizar(
-    new Intl.DateTimeFormat('es-MX', {
+    new Intl.DateTimeFormat(POR_DEFECTO.locale, {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -36,7 +37,7 @@ export function fechaLarga(fecha: Date, zonaHoraria: string): string {
 /** Partes sueltas para el bloque grande de fecha de la portada. */
 export function fechaPartes(fecha: Date, zonaHoraria: string) {
   const parte = (opciones: Intl.DateTimeFormatOptions) =>
-    new Intl.DateTimeFormat('es-MX', { ...opciones, timeZone: zonaHoraria }).format(fecha);
+    new Intl.DateTimeFormat(POR_DEFECTO.locale, { ...opciones, timeZone: zonaHoraria }).format(fecha);
 
   return {
     diaSemana: capitalizar(parte({ weekday: 'long' })),
