@@ -312,6 +312,19 @@ su misma fila. Dinero en centavos enteros.
 - Antes de finalizar, exporta el CSV: el borrado no se deshace.
 - Eliminar un evento borra también sus archivos de R2.
 
+## Vista pública del avance (GitHub Pages)
+
+Para mostrar el avance a los socios hay una **instantánea estática** en
+<https://kzaldasp.github.io/clickpass-invitaciones/>: catálogo, las demos
+completas (animaciones, paletas y confirmación de muestra), las invitaciones
+generales y una vista de solo lectura del panel y del admin con los datos de la
+semilla. Los formularios muestran un aviso y no guardan nada.
+
+Para republicarla (con `npm run db:dev` corriendo): `npm run instantanea`.
+Genera `.instantanea/` con `scripts/instantanea.ts` y la sube a la rama
+`gh-pages`, que es la que sirve Pages. No reemplaza al despliegue real en
+Cloudflare: ahí sí hay base, sesiones y confirmaciones.
+
 ## Despliegue (Cloudflare + Turso)
 
 1. **Turso:** `turso db create clickpass` y `turso db tokens create clickpass`.
