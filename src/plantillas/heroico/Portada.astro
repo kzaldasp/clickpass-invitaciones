@@ -1,0 +1,181 @@
+---
+/**
+ * Portada de revista de comic. Al tocar "¡POW!", la tapa se rasga en dos
+ * mitades diagonales que salen volando. Solo @keyframes en los hijos.
+ */
+interface Props { nombre: string; edad?: number; invitado?: string }
+const { nombre, edad, invitado } = Astro.props;
+---
+
+<div class="portada" data-gate-portada>
+  {
+    ['a', 'b'].map((mitad) => (
+      <div class:list={['tapa', `tapa--${mitad}`]} aria-hidden="true">
+        <div class="tapa__cabecera">
+          <span class="tapa__sello">N.º {edad ?? 1}</span>
+          <span class="tapa__marca">SÚPER CÓMICS</span>
+        </div>
+        <div class="tapa__rayos" />
+        <p class="tapa__edicion">Edición especial de cumpleaños</p>
+        <p class="tapa__nombre">{nombre}</p>
+        {invitado && <p class="tapa__para">Con {invitado} como invitado especial</p>}
+      </div>
+    ))
+  }
+  <button class="pow" type="button" data-gate-abrir aria-label="Abrir invitación" data-p-entra>
+    <span>¡POW!</span>
+  </button>
+  <p class="pow-ayuda" data-p-entra>Toca el ¡POW! para abrir</p>
+</div>
+
+<script>
+  import { entradaPortada, gsap, movimientoReducido } from '../kit/animaciones';
+  const p = document.querySelector<HTMLElement>('[data-gate-portada]');
+  entradaPortada(p);
+  if (p && !movimientoReducido()) {
+    gsap.from(p.querySelector('.pow'), { scale: 0, rotate: -40, duration: 0.8, ease: 'back.out(2.4)', delay: 0.4 });
+    gsap.to(p.querySelector('.pow span'), { scale: 1.08, rotate: 3, duration: 0.5, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 1.3 });
+  }
+</script>
+
+<style>
+  .portada {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    opacity: 1;
+  }
+
+  .portada[data-saliendo='true'] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease 1.1s;
+  }
+
+  .tapa {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.6rem;
+    padding: 1.5rem;
+    background:
+      radial-gradient(circle, rgb(0 0 0 / 0.14) 1.2px, transparent 1.6px) 0 0 / 9px 9px,
+      var(--he-amarillo);
+    text-align: center;
+  }
+
+  .tapa--a { clip-path: polygon(0 0, 100% 0, 100% 38%, 0 66%); }
+  .tapa--b { clip-path: polygon(0 66%, 100% 38%, 100% 100%, 0 100%); }
+
+  .tapa__cabecera {
+    position: absolute;
+    inset: 1rem 1rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.8rem;
+    border: 3px solid #111;
+    background: var(--he-rojo);
+    color: #fff;
+    font-family: var(--he-f-titulo);
+    font-size: 1.3rem;
+    letter-spacing: 0.05em;
+    box-shadow: 5px 5px 0 #111;
+  }
+
+  .tapa__sello {
+    padding: 0.1rem 0.5rem;
+    background: #fff;
+    color: #111;
+    font-size: 1rem;
+  }
+
+  .tapa__rayos {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: repeating-conic-gradient(from 0deg at 50% 55%, rgb(255 255 255 / 0.35) 0deg 6deg, transparent 6deg 18deg);
+  }
+
+  .tapa__edicion {
+    margin: 0;
+    font-family: var(--he-f-cuerpo);
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #111;
+  }
+
+  .tapa__nombre {
+    margin: 0;
+    font-family: var(--he-f-titulo);
+    font-size: clamp(3.6rem, 22vw, 6rem);
+    line-height: 0.95;
+    color: #fff;
+    -webkit-text-stroke: 3px #111;
+    text-shadow: 6px 6px 0 var(--he-azul), 7px 7px 0 #111;
+    transform: rotate(-4deg);
+  }
+
+  .tapa__para {
+    max-width: 16rem;
+    margin: 1rem 0 5rem;
+    padding: 0.5rem 0.9rem;
+    border: 3px solid #111;
+    border-radius: 1rem;
+    background: #fff;
+    font-family: var(--he-f-cuerpo);
+    font-weight: 700;
+    color: #111;
+  }
+
+  .pow {
+    position: absolute;
+    bottom: 13%;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 9.5rem;
+    aspect-ratio: 1;
+    border: 0;
+    background: #fff;
+    clip-path: polygon(50% 0, 61% 20%, 84% 8%, 80% 32%, 100% 42%, 80% 56%, 92% 80%, 68% 76%, 58% 100%, 46% 80%, 22% 94%, 26% 70%, 0 62%, 18% 46%, 4% 24%, 30% 26%, 36% 4%);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .pow span {
+    font-family: var(--he-f-titulo);
+    font-size: 2.4rem;
+    color: var(--he-rojo);
+    -webkit-text-stroke: 1.5px #111;
+  }
+
+  .pow-ayuda {
+    position: absolute;
+    bottom: 6%;
+    z-index: 2;
+    margin: 0;
+    padding: 0.2rem 0.6rem;
+    border: 2px solid #111;
+    background: #fff;
+    font-family: var(--he-f-cuerpo);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #111;
+  }
+
+  .portada[data-saliendo='true'] .pow,
+  .portada[data-saliendo='true'] .pow-ayuda { animation: pow-sale 0.35s ease-in forwards; }
+  .portada[data-saliendo='true'] .tapa--a { animation: rasga-a 1.1s cubic-bezier(0.5, 0, 0.75, 0) 0.2s forwards; }
+  .portada[data-saliendo='true'] .tapa--b { animation: rasga-b 1.1s cubic-bezier(0.5, 0, 0.75, 0) 0.2s forwards; }
+
+  @keyframes pow-sale { to { transform: scale(1.8); opacity: 0; } }
+  @keyframes rasga-a { to { transform: translate(-30%, -110%) rotate(-14deg); } }
+  @keyframes rasga-b { to { transform: translate(30%, 110%) rotate(12deg); } }
+</style>

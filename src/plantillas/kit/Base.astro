@@ -1,0 +1,160 @@
+---
+/**
+ * Kit de secciones compartidas. Cada plantilla que lo usa incluye <Base />
+ * una vez y define sus variables bajo html[data-tema='<slug>']:
+ *
+ *   --k-superficie  fondo de tarjetas        --k-texto   texto principal
+ *   --k-suave       texto secundario         --k-acento  color de marca
+ *   --k-acento-texto texto sobre el acento   --k-linea   bordes y filetes
+ *   --k-f-titulo    fuente de nombres/cifras --k-f-cuerpo fuente de lectura
+ *   --k-f-deco      fuente decorativa (script, comic, neon…)
+ *   --k-caps-espaciado, --k-radio, --k-sombra, --k-deco-tamano
+ *
+ * El kit solo pone estructura; el caracter lo da la plantilla (portada,
+ * decoracion, animacion propia). Nada de esto obliga: una plantilla puede
+ * usar algunas secciones del kit y dibujar el resto a su manera.
+ */
+---
+
+<style is:global>
+  [data-kit] {
+    --k-superficie: #fff;
+    --k-texto: #222;
+    --k-suave: #666;
+    --k-acento: #333;
+    --k-acento-texto: #fff;
+    --k-linea: rgb(0 0 0 / 0.15);
+    --k-f-titulo: Georgia, serif;
+    --k-f-cuerpo: Georgia, serif;
+    --k-f-deco: Georgia, serif;
+    --k-caps-espaciado: 0.28em;
+    --k-radio: 0.6rem;
+    --k-sombra: 0 20px 50px -26px rgb(0 0 0 / 0.35);
+    --k-deco-tamano: clamp(2.6rem, 13vw, 3.4rem);
+
+    position: relative;
+    z-index: 1;
+    color: var(--k-texto);
+    font-family: var(--k-f-cuerpo);
+  }
+
+  [data-kit] .escena {
+    padding-block: clamp(3.5rem, 11vh, 6rem);
+  }
+
+  [data-kit] .k-caps {
+    font-family: var(--k-f-cuerpo);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: var(--k-caps-espaciado);
+    text-transform: uppercase;
+    color: var(--k-suave);
+  }
+
+  [data-kit] .k-deco {
+    font-family: var(--k-f-deco);
+    font-weight: 400;
+    line-height: 1.08;
+    color: var(--k-acento);
+  }
+
+  [data-kit] .k-titulo {
+    display: grid;
+    justify-items: center;
+    gap: 0.2rem;
+    margin: 0 0 2.4rem;
+    text-align: center;
+  }
+
+  [data-kit] .k-titulo .k-deco {
+    font-size: var(--k-deco-tamano);
+  }
+
+  [data-kit] .k-centro {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+
+  [data-kit] .k-texto-suave {
+    max-width: 21rem;
+    margin: 0;
+    font-size: 1.12rem;
+    font-style: italic;
+    color: var(--k-suave);
+    text-wrap: balance;
+  }
+
+  [data-kit] .k-boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.9rem;
+    padding: 0.6rem 1.7rem;
+    border: 1px solid var(--k-acento);
+    border-radius: var(--k-radio-boton, 999px);
+    background: var(--k-acento);
+    color: var(--k-acento-texto);
+    font-family: var(--k-f-cuerpo);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-decoration: none;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  [data-kit] .k-boton--linea {
+    background: transparent;
+    color: var(--k-acento);
+  }
+
+  [data-kit] .k-tarjeta {
+    position: relative;
+    padding: 2rem 1.4rem;
+    border: 1px solid var(--k-linea);
+    border-radius: var(--k-radio);
+    background: var(--k-superficie);
+    box-shadow: var(--k-sombra);
+  }
+
+  /* <Confirmacion /> toma la piel del kit. */
+  [data-kit] .k-confirmacion {
+    --conf-fondo: var(--k-superficie);
+    --conf-texto: var(--k-texto);
+    --conf-suave: var(--k-suave);
+    --conf-acento: var(--k-acento);
+    --conf-sobre-acento: var(--k-acento-texto);
+    --conf-borde: var(--k-linea);
+    --conf-radio: var(--k-radio);
+    --conf-fuente-titulo: var(--k-f-deco);
+  }
+
+  [data-kit] .k-confirmacion .conf__titulo {
+    font-size: var(--k-deco-tamano);
+    font-weight: 400;
+    color: var(--k-acento);
+  }
+
+  [data-kit] .k-confirmacion .conf__boton {
+    font-family: var(--k-f-cuerpo);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  /* Capa de particulas (petalos, estrellas, confeti…) detras del contenido. */
+  .k-particulas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .k-particulas > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+  }
+</style>

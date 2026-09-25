@@ -1,0 +1,21 @@
+---
+/** Cohete de linea con ventana y llamas animadas (CSS). */
+---
+
+<svg class="cohete" viewBox="0 0 80 160" aria-hidden="true">
+  <g class="cohete__llama">
+    <path d="M30 128 Q40 170 50 128 Z" fill="#ffb347" />
+    <path d="M34 128 Q40 156 46 128 Z" fill="#fff3b0" />
+  </g>
+  <path d="M40 4 C62 26 62 90 56 124 H24 C18 90 18 26 40 4 Z" fill="#f4f6ff" stroke="#0b1026" stroke-width="2.5" />
+  <path d="M40 4 C50 14 55 26 57 38 H23 C25 26 30 14 40 4 Z" fill="var(--ga-violeta)" stroke="#0b1026" stroke-width="2.5" />
+  <circle cx="40" cy="66" r="11" fill="var(--ga-cian)" stroke="#0b1026" stroke-width="2.5" />
+  <circle cx="36" cy="62" r="3" fill="#fff" fill-opacity=".8" />
+  <path d="M24 100 L8 128 L24 124 Z M56 100 L72 128 L56 124 Z" fill="var(--ga-violeta)" stroke="#0b1026" stroke-width="2.5" stroke-linejoin="round" />
+</svg>
+
+<style>
+  .cohete { display: block; width: 100%; overflow: visible; }
+  .cohete__llama { transform-box: fill-box; transform-origin: 50% 0; animation: llama 0.15s ease-in-out infinite alternate; }
+  @keyframes llama { to { transform: scaleY(0.75) scaleX(0.9); } }
+</style>

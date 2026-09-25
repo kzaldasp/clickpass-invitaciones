@@ -1,0 +1,20 @@
+---
+/** Rama de limonero: hojas oliva y tres limones. Se mece con [data-me-rama]. */
+---
+
+<svg class="limonero" viewBox="0 0 200 120" aria-hidden="true" data-me-rama>
+  <path d="M2 20 C60 30 110 50 190 100" fill="none" stroke="#6b5a3c" stroke-width="2.4" stroke-linecap="round" />
+  {[[30, 26, -30], [55, 34, 40], [80, 44, -20], [105, 56, 50], [130, 70, -10], [160, 86, 40]].map(([x, y, r]) => (
+    <path d="M0 0 C8 -8 26 -9 36 0 C26 9 8 8 0 0 Z" transform={`translate(${x} ${y}) rotate(${r})`} fill="var(--me-oliva)" />
+  ))}
+  {[[70, 56], [118, 84], [96, 74]].map(([x, y]) => (
+    <g transform={`translate(${x} ${y})`}>
+      <ellipse rx="12" ry="9" fill="var(--me-limon)" />
+      <ellipse cx="-4" cy="-3" rx="3" ry="2" fill="#fff" fill-opacity=".55" />
+    </g>
+  ))}
+</svg>
+
+<style>
+  .limonero { display: block; width: 100%; overflow: visible; transform-origin: 0 17%; }
+</style>

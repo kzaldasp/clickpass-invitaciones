@@ -1,0 +1,39 @@
+---
+/** Codigo de vestimenta. El icono lo puede poner la plantilla (slot). */
+interface Props {
+  titulo: string;
+  nota?: string;
+  antes?: string;
+}
+
+const { titulo, nota, antes = 'Código de vestimenta' } = Astro.props;
+---
+
+<section class="escena">
+  <div class="contenedor k-centro kdress">
+    <p class="k-caps" data-anim="sube">{antes}</p>
+    <h2 class="k-deco kdress__titulo" data-anim="sube">{titulo}</h2>
+    <div class="kdress__icono" data-anim="escala"><slot /></div>
+    {nota && <p class="k-texto-suave" data-anim="sube">{nota}</p>}
+  </div>
+</section>
+
+<style>
+  .kdress {
+    gap: 0.4rem;
+  }
+
+  .kdress__titulo {
+    margin: 0 0 0.8rem;
+    font-size: calc(var(--k-deco-tamano) * 1.15);
+  }
+
+  .kdress__icono {
+    margin-bottom: 1rem;
+    color: var(--k-acento);
+  }
+
+  .kdress__icono:empty {
+    display: none;
+  }
+</style>

@@ -1,0 +1,92 @@
+---
+/**
+ * Marco de foto del kit. Sin foto: hueco "Aqui va tu foto" en borrador y
+ * demo; publicada, no se dibuja nada. La forma y el borde los pone la
+ * plantilla con --k-foto-radio / --k-foto-borde si quiere algo distinto.
+ */
+interface Props {
+  src?: string;
+  forma?: 'arco' | 'rect' | 'ovalo' | 'circulo' | 'cuadro';
+  hueco: boolean;
+  alt?: string;
+  texto?: string;
+}
+
+const { src, forma = 'rect', hueco, alt = '', texto = 'Aquí va tu foto' } = Astro.props;
+---
+
+{
+  src ? (
+    <figure class:list={['kfoto', `kfoto--${forma}`]} data-k-foto>
+      <img src={src} alt={alt} loading="lazy" decoding="async" />
+    </figure>
+  ) : (
+    hueco && (
+      <figure class:list={['kfoto', `kfoto--${forma}`, 'kfoto--hueco']}>
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M8 36 L18 24 L26 32 L32 26 L40 36 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
+          <circle cx="32" cy="15" r="4" fill="none" stroke="currentColor" stroke-width="1.4" />
+        </svg>
+        <figcaption>{texto}</figcaption>
+      </figure>
+    )
+  )
+}
+
+<style>
+  .kfoto {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    border: var(--k-foto-borde, 0);
+    background: color-mix(in srgb, var(--k-acento) 12%, var(--k-superficie));
+  }
+
+  .kfoto img {
+    display: block;
+    width: 100%;
+    height: 118%;
+    object-fit: cover;
+    transform: translateY(-8%);
+  }
+
+  .kfoto--arco { aspect-ratio: 3 / 4; border-radius: 999px 999px var(--k-radio) var(--k-radio); }
+  .kfoto--rect { aspect-ratio: 4 / 5; border-radius: var(--k-foto-radio, var(--k-radio)); }
+  .kfoto--ovalo { aspect-ratio: 4 / 5; border-radius: 50%; }
+  .kfoto--circulo { aspect-ratio: 1; border-radius: 50%; }
+  .kfoto--cuadro { aspect-ratio: 1; border-radius: var(--k-foto-radio, var(--k-radio)); }
+
+  .kfoto::after {
+    content: '';
+    position: absolute;
+    inset: 0.5rem;
+    border: var(--k-foto-filete, 1px solid rgb(255 255 255 / 0.6));
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .kfoto--hueco {
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 0.5rem;
+    border: 1px dashed color-mix(in srgb, var(--k-acento) 50%, transparent);
+    background:
+      repeating-linear-gradient(135deg, transparent 0 14px, color-mix(in srgb, var(--k-acento) 10%, transparent) 14px 15px),
+      color-mix(in srgb, var(--k-acento) 6%, var(--k-superficie));
+    color: var(--k-acento);
+  }
+
+  .kfoto--hueco::after {
+    display: none;
+  }
+
+  .kfoto--hueco svg {
+    width: 2.4rem;
+  }
+
+  .kfoto--hueco figcaption {
+    font-family: var(--k-f-deco);
+    font-size: 1.4rem;
+  }
+</style>

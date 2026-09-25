@@ -1,0 +1,14 @@
+---
+/** Titulo de seccion: linea en versales + linea decorativa. */
+interface Props {
+  antes?: string;
+  titulo: string;
+}
+
+const { antes, titulo } = Astro.props;
+---
+
+<h2 class="k-titulo" data-anim="sube">
+  {antes && <span class="k-caps">{antes}</span>}
+  <span class="k-deco">{titulo}</span>
+</h2>

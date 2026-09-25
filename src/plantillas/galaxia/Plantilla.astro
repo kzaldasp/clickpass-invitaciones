@@ -1,0 +1,219 @@
+---
+/**
+ * Galaxia: cumpleanos espacial. Despegue -> planeta con anillo que gira +
+ * nombre -> fecha -> control de mision -> cuenta regresiva -> plataforma
+ * (lugares) -> dress code -> regalos -> pase de abordar -> confirmacion ->
+ * cierre. Estrellas en capas con parallax y estrellas fugaces.
+ */
+import Invitacion from '../../layouts/Invitacion.astro';
+import Confirmacion from '../compartidas/Confirmacion.astro';
+import Base from '../kit/Base.astro';
+import Foto from '../kit/Foto.astro';
+import Fecha from '../kit/Fecha.astro';
+import Familia from '../kit/Familia.astro';
+import Cuenta from '../kit/Cuenta.astro';
+import Lugares from '../kit/Lugares.astro';
+import Dress from '../kit/Dress.astro';
+import Regalos from '../kit/Regalos.astro';
+import Pase from '../kit/Pase.astro';
+import Cierre from '../kit/Cierre.astro';
+import Portada from './Portada.astro';
+import Cohete from './Cohete.astro';
+import { extraTexto } from '../kit/extras';
+import { manifiesto } from './manifiesto';
+import type { PropsPlantilla } from '../tipos';
+
+type Props = PropsPlantilla;
+const { evento, invitado, confirmacion } = Astro.props;
+const d = evento.contenido;
+const x = d.extras as Record<string, unknown>;
+const hueco = evento.estado === 'borrador' || confirmacion.modo === 'demo';
+const preset = manifiesto.presets?.find((p) => p.id === evento.preset);
+const linkQr = invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}` : undefined;
+---
+
+<Invitacion
+  titulo={`${d.festejado.nombre} · ${d.tipo}`}
+  descripcion={invitado ? `${invitado.nombre}, ¡prepárate para despegar!` : (d.frase ?? d.tipo)}
+  imagen={d.galeria[0] ?? manifiesto.portada}
+  tema="galaxia"
+  colorTema={manifiesto.colorTema}
+  variables={preset?.variables}
+  borrador={evento.estado === 'borrador'}
+  musica={d.musica?.archivo}
+>
+  <Base />
+  <Portada nombre={d.festejado.nombre} edad={d.festejado.edad} invitado={invitado?.nombre} />
+
+  <div class="ga-cielo" aria-hidden="true">
+    <span class="ga-capa ga-capa--1" data-ga-capa="0.15"></span>
+    <span class="ga-capa ga-capa--2" data-ga-capa="0.35"></span>
+    <span class="ga-fugaz" data-ga-fugaz></span>
+    <span class="ga-fugaz" data-ga-fugaz></span>
+  </div>
+
+  <main data-kit>
+    <section class="escena">
+      <div class="contenedor k-centro ga-heroe">
+        <div class="ga-planeta" data-anim="escala" aria-hidden="true">
+          <span class="ga-planeta__bola"></span>
+          <span class="ga-planeta__anillo"></span>
+        </div>
+        <p class="k-caps" data-anim="sube">{d.tipo}</p>
+        <h1 class="ga-nombre" data-k-split>{d.festejado.nombre}</h1>
+        {d.festejado.edad && <p class="ga-edad" data-anim="sube"><span>{d.festejado.edad}</span> años en órbita</p>}
+        {d.frase && <p class="k-texto-suave" data-anim="sube">{d.frase}</p>}
+        <div class="ga-ventana" data-anim="sube"><Foto src={d.galeria[0]} forma="circulo" hueco={hueco} texto="Foto del astronauta" /></div>
+      </div>
+    </section>
+
+    <Fecha evento={evento} antes="Fecha de lanzamiento" titulo="¡Anótala!" />
+    <Familia anfitriones={d.anfitriones} />
+    <Cuenta evento={evento} antes="T menos" titulo="para el despegue" hoy="¡Hoy despegamos!" />
+    <Lugares lugares={d.lugares} zona={evento.zonaHoraria} antes="Coordenadas de" titulo="la plataforma" textoMapa="Ver ruta" />
+    {
+      d.dressCode && (
+        <Dress titulo={d.dressCode.titulo} nota={d.dressCode.nota} antes="Traje de la misión">
+          <div style="width:4rem"><Cohete /></div>
+        </Dress>
+      )
+    }
+    <Regalos extras={x} antes="Un regalo para" titulo="el astronauta" />
+    <Pase invitado={invitado} linkQr={linkQr} antes="Pase de abordar" forma="boleto" />
+    <section class="escena">
+      <div class="contenedor k-confirmacion" data-anim="sube">
+        <Confirmacion confirmacion={confirmacion} invitado={invitado} zonaHoraria={evento.zonaHoraria} titulo="¿Subes a bordo?" />
+      </div>
+    </section>
+    <Cierre foto={d.galeria[1]} hueco={false} despedida={d.despedida} hashtag={extraTexto(x, 'hashtag')}>
+      <div style="width:3.5rem"><Cohete /></div>
+    </Cierre>
+  </main>
+</Invitacion>
+
+<script>
+  import { montarKit, gsap, movimientoReducido } from '../kit/animaciones';
+  document.addEventListener('invitacion:abierta', () => {
+    montarKit({ entradaFoto: 'circulo' });
+    if (movimientoReducido()) return;
+    // Capas de estrellas: cada una baja a distinta velocidad al hacer scroll.
+    document.querySelectorAll<HTMLElement>('[data-ga-capa]').forEach((capa) => {
+      const v = Number(capa.dataset.gaCapa);
+      gsap.to(capa, { y: () => -document.body.scrollHeight * v * 0.25, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: true } });
+    });
+    // Estrellas fugaces de vez en cuando.
+    document.querySelectorAll<HTMLElement>('[data-ga-fugaz]').forEach((f, i) => {
+      const cruzar = () => {
+        gsap.set(f, { x: gsap.utils.random(0, window.innerWidth * 0.6), y: gsap.utils.random(0, window.innerHeight * 0.5), opacity: 0 });
+        gsap.timeline({ delay: gsap.utils.random(3, 8) + i * 2, onComplete: cruzar })
+          .to(f, { opacity: 1, duration: 0.1 })
+          .to(f, { x: '+=260', y: '+=150', duration: 0.9, ease: 'power1.in' }, 0)
+          .to(f, { opacity: 0, duration: 0.3 }, 0.6);
+      };
+      cruzar();
+    });
+  });
+</script>
+
+<style is:global>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Exo+2:ital,wght@0,400;0,600;1,400&display=swap');
+
+  html[data-tema='galaxia'] {
+    --ga-fondo: #0b1026;
+    --ga-violeta: #6d5dfc;
+    --ga-cian: #4fd1c5;
+    --ga-texto: #eef1ff;
+    --ga-f-titulo: 'Orbitron', system-ui, sans-serif;
+    --ga-f-cuerpo: 'Exo 2', system-ui, sans-serif;
+    --c-fondo: var(--ga-fondo);
+    --c-texto: var(--ga-texto);
+    --f-cuerpo: var(--ga-f-cuerpo);
+    --f-titulo: var(--ga-f-titulo);
+  }
+
+  html[data-tema='galaxia'] body {
+    background:
+      radial-gradient(ellipse at 20% 0%, color-mix(in srgb, var(--ga-violeta) 30%, transparent) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 60%, color-mix(in srgb, var(--ga-cian) 16%, transparent) 0%, transparent 45%),
+      var(--ga-fondo);
+    background-attachment: fixed;
+  }
+
+  html[data-tema='galaxia'] [data-kit] {
+    --k-superficie: color-mix(in srgb, #fff 6%, var(--ga-fondo));
+    --k-texto: var(--ga-texto);
+    --k-suave: #aab2dd;
+    --k-acento: var(--ga-cian);
+    --k-acento-texto: var(--ga-fondo);
+    --k-linea: color-mix(in srgb, var(--ga-violeta) 55%, transparent);
+    --k-f-titulo: var(--ga-f-titulo);
+    --k-f-cuerpo: var(--ga-f-cuerpo);
+    --k-f-deco: var(--ga-f-titulo);
+    --k-caps-espaciado: 0.3em;
+    --k-radio: 1rem;
+    --k-sombra: 0 0 40px -12px color-mix(in srgb, var(--ga-violeta) 70%, transparent);
+    --k-deco-tamano: clamp(1.7rem, 8.5vw, 2.3rem);
+    --k-foto-filete: 2px solid var(--ga-cian);
+  }
+
+  html[data-tema='galaxia'] [data-kit] .k-deco { font-weight: 700; text-shadow: 0 0 18px color-mix(in srgb, var(--ga-cian) 60%, transparent); }
+  html[data-tema='galaxia'] .k-confirmacion .conf__control option { color: #111; }
+
+  .ga-cielo { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .ga-capa { position: absolute; inset: 0 0 -200vh; }
+  .ga-capa--1 {
+    background:
+      radial-gradient(1px 1px at 10% 10%, #fff 50%, transparent 51%) 0 0 / 180px 180px,
+      radial-gradient(1px 1px at 60% 40%, #fff 50%, transparent 51%) 0 0 / 220px 220px;
+    opacity: 0.7;
+  }
+  .ga-capa--2 {
+    background:
+      radial-gradient(1.8px 1.8px at 30% 70%, #fff 50%, transparent 51%) 0 0 / 260px 260px,
+      radial-gradient(2px 2px at 80% 20%, var(--ga-cian) 50%, transparent 51%) 0 0 / 340px 340px;
+  }
+  .ga-fugaz {
+    position: absolute;
+    width: 110px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #fff);
+    transform: rotate(30deg);
+    opacity: 0;
+  }
+  .ga-heroe { gap: 0.5rem; }
+  .ga-planeta { position: relative; width: 9rem; aspect-ratio: 1; margin-bottom: 1rem; }
+  .ga-planeta__bola {
+    position: absolute;
+    inset: 12%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff 0%, var(--ga-cian) 25%, var(--ga-violeta) 70%, #2a1d6b 100%);
+    box-shadow: 0 0 40px color-mix(in srgb, var(--ga-violeta) 70%, transparent);
+  }
+  .ga-planeta__anillo {
+    position: absolute;
+    inset: 38% -18%;
+    border: 3px solid color-mix(in srgb, var(--ga-cian) 80%, white);
+    border-radius: 50%;
+    transform: rotate(-18deg);
+    animation: orbita 8s linear infinite;
+  }
+  @keyframes orbita { from { transform: rotate(-18deg) rotateX(0deg); } to { transform: rotate(-18deg) rotateX(360deg); } }
+  .ga-nombre {
+    margin: 0;
+    font-family: var(--ga-f-titulo);
+    font-size: clamp(2.4rem, 13vw, 3.6rem);
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 22px var(--ga-violeta);
+  }
+  .ga-edad { margin: 0; color: #cfd6ff; }
+  .ga-edad span { font-family: var(--ga-f-titulo); font-size: 2.2rem; color: var(--ga-cian); }
+  .ga-ventana {
+    width: min(13rem, 60vw);
+    margin-top: 1.4rem;
+    padding: 0.6rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #cfd6ff, #6b75b8);
+    box-shadow: 0 0 30px color-mix(in srgb, var(--ga-cian) 45%, transparent);
+  }
+</style>

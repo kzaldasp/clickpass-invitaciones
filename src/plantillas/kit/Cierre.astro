@@ -1,0 +1,69 @@
+---
+/** Foto final, despedida, hashtag y una firma que pone la plantilla (slot). */
+import Foto from './Foto.astro';
+
+interface Props {
+  foto?: string;
+  hueco: boolean;
+  despedida?: string;
+  hashtag?: string;
+  forma?: 'ovalo' | 'circulo' | 'arco' | 'rect';
+}
+
+const { foto, hueco, despedida, hashtag, forma = 'ovalo' } = Astro.props;
+---
+
+<section class="escena">
+  <div class="contenedor k-centro kcierre">
+    {
+      (foto || hueco) && (
+        <div class="kcierre__foto" data-anim="sube">
+          <Foto src={foto} forma={forma} hueco={hueco} />
+        </div>
+      )
+    }
+    {despedida && <p class="k-deco kcierre__despedida" data-anim="sube">{despedida}</p>}
+    {
+      hashtag && (
+        <p class="kcierre__hashtag" data-anim="sube">
+          <span class="k-caps">Comparte tus fotos</span>
+          <strong>#{hashtag.replace(/^#/, '')}</strong>
+        </p>
+      )
+    }
+    <div class="kcierre__firma" data-anim="escala"><slot /></div>
+  </div>
+</section>
+
+<style>
+  .kcierre {
+    gap: 1.6rem;
+    padding-bottom: 3rem;
+  }
+
+  .kcierre__foto {
+    width: min(17rem, 72vw);
+  }
+
+  .kcierre__despedida {
+    max-width: 20rem;
+    margin: 0;
+    font-size: var(--k-deco-tamano);
+  }
+
+  .kcierre__hashtag {
+    display: grid;
+    gap: 0.3rem;
+    margin: 0;
+  }
+
+  .kcierre__hashtag strong {
+    font-family: var(--k-f-titulo);
+    font-size: 1.35rem;
+    font-weight: 500;
+  }
+
+  .kcierre__firma:empty {
+    display: none;
+  }
+</style>

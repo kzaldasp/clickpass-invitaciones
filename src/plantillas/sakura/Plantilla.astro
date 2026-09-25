@@ -1,0 +1,230 @@
+---
+/**
+ * Sakura: estilo anime/manga (sin personajes con marca). Puertas shoji ->
+ * vinetas de manga con lineas de velocidad -> fecha -> historia -> cuenta
+ * regresiva -> episodios (lugares en linea de tiempo) -> dress code (cosplay)
+ * -> regalos -> pase -> confirmacion -> "Continuara". Petalos que caen.
+ */
+import Invitacion from '../../layouts/Invitacion.astro';
+import Confirmacion from '../compartidas/Confirmacion.astro';
+import Base from '../kit/Base.astro';
+import Foto from '../kit/Foto.astro';
+import Fecha from '../kit/Fecha.astro';
+import Familia from '../kit/Familia.astro';
+import Historia from '../kit/Historia.astro';
+import Cuenta from '../kit/Cuenta.astro';
+import Lugares from '../kit/Lugares.astro';
+import Dress from '../kit/Dress.astro';
+import Regalos from '../kit/Regalos.astro';
+import Pase from '../kit/Pase.astro';
+import Cierre from '../kit/Cierre.astro';
+import Portada from './Portada.astro';
+import { extraTexto } from '../kit/extras';
+import { manifiesto } from './manifiesto';
+import type { PropsPlantilla } from '../tipos';
+
+type Props = PropsPlantilla;
+const { evento, invitado, confirmacion } = Astro.props;
+const d = evento.contenido;
+const x = d.extras as Record<string, unknown>;
+const hueco = evento.estado === 'borrador' || confirmacion.modo === 'demo';
+const preset = manifiesto.presets?.find((p) => p.id === evento.preset);
+const linkQr = invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}` : undefined;
+---
+
+<Invitacion
+  titulo={`${d.festejado.nombre} · ${d.tipo}`}
+  descripcion={invitado ? `${invitado.nombre}, ¡estás invitado al nuevo capítulo!` : (d.frase ?? d.tipo)}
+  imagen={d.galeria[0] ?? manifiesto.portada}
+  tema="sakura"
+  colorTema={manifiesto.colorTema}
+  variables={preset?.variables}
+  borrador={evento.estado === 'borrador'}
+  musica={d.musica?.archivo}
+>
+  <Base />
+  <Portada nombre={d.festejado.nombre} tipo={d.tipo} invitado={invitado?.nombre} />
+
+  <div class="k-particulas" aria-hidden="true">
+    {Array.from({ length: 12 }, () => (
+      <svg class="sk-petalo" viewBox="0 0 20 20" data-sk-petalo><path d="M10 1 C15 5 17 12 10 19 C3 12 5 5 10 1 Z M10 1 L11 5 L10 4 L9 5 Z" fill="var(--sk-rosa)" fill-opacity=".85" /></svg>
+    ))}
+  </div>
+
+  <main data-kit>
+    <section class="escena">
+      <div class="contenedor sk-manga">
+        <div class="sk-panel sk-panel--titulo" data-anim="sube">
+          <span class="sk-velocidad" aria-hidden="true"></span>
+          <p class="k-caps sk-tipo">{d.tipo}</p>
+          <h1 class="sk-nombre" data-k-split>{d.festejado.nombre}</h1>
+          {d.festejado.edad && <p class="sk-edad"><span>{d.festejado.edad}</span></p>}
+        </div>
+        <div class="sk-fila">
+          <div class="sk-panel sk-panel--foto" data-anim="sube"><Foto src={d.galeria[0]} forma="rect" hueco={hueco} /></div>
+          <div class="sk-panel sk-panel--kanji" data-anim="sube" aria-hidden="true">
+            <span>祝</span><span>誕生日</span>
+          </div>
+        </div>
+        {d.frase && <p class="sk-globo" data-anim="escala">{d.frase}</p>}
+      </div>
+    </section>
+
+    <Fecha evento={evento} antes="Estreno del capítulo" titulo="¡Guarda la fecha!" />
+    <Familia anfitriones={d.anfitriones} />
+    <Historia foto={d.galeria[1]} hueco={hueco} antes="Mi historia" texto={extraTexto(x, 'historia')} firma={d.festejado.nombre} />
+    <Cuenta evento={evento} antes="Faltan" titulo="para el gran episodio" hoy="¡Hoy es el estreno!" />
+    <Lugares lugares={d.lugares} zona={evento.zonaHoraria} estilo="linea" antes="Guía de" titulo="episodios" textoMapa="Mapa" />
+    {d.dressCode && <Dress titulo={d.dressCode.titulo} nota={d.dressCode.nota} antes="Vestuario" />}
+    <Regalos extras={x} antes="Un detalle para" titulo="la protagonista" />
+    <Pase invitado={invitado} linkQr={linkQr} antes="Pase de invitado especial" forma="boleto" />
+    <section class="escena">
+      <div class="contenedor k-confirmacion" data-anim="sube">
+        <Confirmacion confirmacion={confirmacion} invitado={invitado} zonaHoraria={evento.zonaHoraria} titulo="¿Te apuntas?" />
+      </div>
+    </section>
+    <Cierre foto={d.galeria[2]} hueco={false} despedida={d.despedida} hashtag={extraTexto(x, 'hashtag')} forma="circulo">
+      <p class="sk-continuara">つづく</p>
+    </Cierre>
+  </main>
+</Invitacion>
+
+<script>
+  import { montarKit, lluvia } from '../kit/animaciones';
+  document.addEventListener('invitacion:abierta', () => {
+    montarKit({ entradaFoto: 'lados' });
+    lluvia('[data-sk-petalo]', { duracion: [9, 14], balanceo: 90, giro: 540 });
+  });
+</script>
+
+<style is:global>
+  @import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@400;700;800&family=Yuji+Syuku&display=swap');
+
+  html[data-tema='sakura'] {
+    --sk-papel: #fff5f7;
+    --sk-rosa: #f29bb2;
+    --sk-rojo: #d94f5c;
+    --sk-tinta: #1f2240;
+    --sk-madera: #6b4a33;
+    --sk-f-titulo: 'Dela Gothic One', 'Arial Black', sans-serif;
+    --sk-f-cuerpo: 'M PLUS Rounded 1c', system-ui, sans-serif;
+    --sk-f-deco: 'Yuji Syuku', serif;
+    --c-fondo: var(--sk-papel);
+    --c-texto: var(--sk-tinta);
+    --f-cuerpo: var(--sk-f-cuerpo);
+    --f-titulo: var(--sk-f-titulo);
+  }
+
+  html[data-tema='sakura'] body {
+    background:
+      radial-gradient(circle at 85% 8%, color-mix(in srgb, var(--sk-rojo) 22%, transparent) 0 5rem, transparent 5.1rem),
+      radial-gradient(circle, color-mix(in srgb, var(--sk-rosa) 25%, transparent) 1px, transparent 1.5px) 0 0 / 14px 14px,
+      var(--sk-papel);
+  }
+
+  html[data-tema='sakura'] [data-kit] {
+    --k-superficie: #fff;
+    --k-texto: var(--sk-tinta);
+    --k-suave: color-mix(in srgb, var(--sk-tinta) 65%, white);
+    --k-acento: var(--sk-rojo);
+    --k-acento-texto: #fff;
+    --k-linea: var(--sk-tinta);
+    --k-f-titulo: var(--sk-f-titulo);
+    --k-f-cuerpo: var(--sk-f-cuerpo);
+    --k-f-deco: var(--sk-f-titulo);
+    --k-caps-espaciado: 0.2em;
+    --k-radio: 0.2rem;
+    --k-sombra: 5px 5px 0 var(--sk-tinta);
+    --k-deco-tamano: clamp(1.9rem, 9.5vw, 2.6rem);
+    --k-cuenta-borde: 2px solid var(--sk-tinta);
+    --k-cuenta-fondo: #fff;
+    --k-cuenta-sombra: 3px 3px 0 var(--sk-tinta);
+    --k-foto-filete: 0;
+  }
+
+  html[data-tema='sakura'] [data-kit] .k-deco { color: var(--sk-tinta); }
+  html[data-tema='sakura'] [data-kit] .k-titulo .k-deco {
+    padding: 0.2rem 0.8rem;
+    background: var(--sk-rosa);
+    box-shadow: 4px 4px 0 var(--sk-tinta);
+  }
+  html[data-tema='sakura'] [data-kit] .k-caps { font-weight: 800; }
+  html[data-tema='sakura'] [data-kit] .klugar,
+  html[data-tema='sakura'] [data-kit] .kpase { border-width: 2px; }
+
+  .sk-manga { display: grid; gap: 0.8rem; }
+  .sk-panel {
+    position: relative;
+    overflow: hidden;
+    border: 3px solid var(--sk-tinta);
+    background: #fff;
+    box-shadow: 5px 5px 0 var(--sk-tinta);
+  }
+  .sk-panel--titulo {
+    display: grid;
+    justify-items: center;
+    gap: 0.3rem;
+    padding: 2.2rem 1rem 1.6rem;
+    clip-path: polygon(0 0, 100% 0, 100% 88%, 0 100%);
+    text-align: center;
+  }
+  .sk-velocidad {
+    position: absolute;
+    inset: -50%;
+    z-index: 0;
+    background: repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--sk-tinta) 12%, transparent) 0deg 1.5deg, transparent 1.5deg 7deg);
+    animation: girar 60s linear infinite;
+  }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  .sk-tipo, .sk-nombre, .sk-edad { position: relative; z-index: 1; }
+  .sk-tipo { margin: 0; padding: 0.2rem 0.6rem; background: #fff; }
+  .sk-nombre {
+    margin: 0;
+    font-family: var(--sk-f-titulo);
+    font-size: clamp(3rem, 16vw, 4.6rem);
+    line-height: 1.05;
+    color: #fff;
+    -webkit-text-stroke: 2.5px var(--sk-tinta);
+    text-shadow: 5px 5px 0 var(--sk-rosa);
+  }
+  .sk-edad span {
+    display: inline-grid;
+    place-items: center;
+    width: 4.4rem;
+    aspect-ratio: 1;
+    border: 3px solid var(--sk-tinta);
+    border-radius: 50%;
+    background: var(--sk-rojo);
+    font-family: var(--sk-f-titulo);
+    font-size: 2rem;
+    color: #fff;
+  }
+  .sk-fila { display: grid; grid-template-columns: 1.6fr 1fr; gap: 0.8rem; }
+  .sk-panel--foto { padding: 0; }
+  .sk-panel--foto .kfoto { height: 100%; aspect-ratio: auto; border-radius: 0; }
+  .sk-panel--kanji {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.4rem;
+    background: var(--sk-rosa);
+    font-family: var(--sk-f-deco);
+    color: var(--sk-tinta);
+    writing-mode: vertical-rl;
+  }
+  .sk-panel--kanji span:first-child { font-size: 3.2rem; }
+  .sk-panel--kanji span:last-child { font-size: 1.6rem; }
+  .sk-globo {
+    justify-self: center;
+    max-width: 20rem;
+    margin: 0.6rem 0 0;
+    padding: 1rem 1.3rem;
+    border: 3px solid var(--sk-tinta);
+    border-radius: 50%;
+    background: #fff;
+    font-weight: 800;
+    text-align: center;
+  }
+  .sk-petalo { width: 1.1rem; }
+  .sk-continuara { font-family: var(--sk-f-deco); font-size: 2.4rem; color: var(--sk-rojo); margin: 0; }
+</style>

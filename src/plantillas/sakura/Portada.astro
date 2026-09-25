@@ -1,0 +1,124 @@
+---
+/**
+ * Puertas shoji con celosia y un sol rojo. Al tocar, se deslizan hacia los
+ * lados (como puertas corredizas) y detras aparece la invitacion.
+ */
+interface Props { nombre: string; tipo: string; invitado?: string }
+const { nombre, tipo, invitado } = Astro.props;
+---
+
+<div class="portada" data-gate-portada>
+  <div class="shoji shoji--izq" aria-hidden="true"></div>
+  <div class="shoji shoji--der" aria-hidden="true"></div>
+  <div class="portada__centro">
+    <span class="portada__kanji" aria-hidden="true" data-p-entra>祝</span>
+    <p class="portada__para" data-p-entra>{invitado ? `Para ${invitado}` : tipo}</p>
+    <p class="portada__nombre" data-p-entra>{nombre}</p>
+    <button class="portada__boton" type="button" data-gate-abrir data-p-entra>Abrir</button>
+  </div>
+</div>
+
+<script>
+  import { entradaPortada } from '../kit/animaciones';
+  entradaPortada(document.querySelector('[data-gate-portada]'));
+</script>
+
+<style>
+  .portada {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    opacity: 1;
+  }
+
+  .portada[data-saliendo='true'] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease 1.2s;
+  }
+
+  .shoji {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    border: 6px solid var(--sk-madera);
+    background:
+      linear-gradient(90deg, var(--sk-madera) 3px, transparent 3px) 0 0 / 25% 100%,
+      linear-gradient(0deg, var(--sk-madera) 3px, transparent 3px) 0 0 / 100% 16.6%,
+      #fbf6ee;
+    box-shadow: inset 0 0 40px rgb(120 80 40 / 0.18);
+  }
+
+  .shoji--izq { left: 0; }
+  .shoji--der { right: 0; }
+
+  .portada__centro {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+
+  .portada__kanji {
+    display: grid;
+    place-items: center;
+    width: 7.5rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--sk-rojo);
+    color: #fff;
+    font-family: var(--sk-f-deco);
+    font-size: 4rem;
+    box-shadow: 0 10px 30px -10px var(--sk-rojo);
+  }
+
+  .portada__para {
+    margin: 1rem 0 0;
+    padding: 0.3rem 0.8rem;
+    background: #fff;
+    font-family: var(--sk-f-cuerpo);
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--sk-tinta);
+  }
+
+  .portada__nombre {
+    margin: 0;
+    padding: 0.2rem 1rem;
+    background: #fff;
+    font-family: var(--sk-f-titulo);
+    font-size: clamp(2.6rem, 15vw, 4rem);
+    line-height: 1.1;
+    color: var(--sk-tinta);
+  }
+
+  .portada__boton {
+    margin-top: 1.4rem;
+    min-height: 3rem;
+    padding: 0.6rem 2.4rem;
+    border: 3px solid var(--sk-tinta);
+    border-radius: 999px;
+    background: var(--sk-rosa);
+    font-family: var(--sk-f-titulo);
+    font-size: 1.2rem;
+    color: var(--sk-tinta);
+    box-shadow: 4px 4px 0 var(--sk-tinta);
+    cursor: pointer;
+  }
+
+  .portada[data-saliendo='true'] .portada__centro { animation: centro-sale 0.4s ease-in forwards; }
+  .portada[data-saliendo='true'] .shoji--izq { animation: corre-izq 1s cubic-bezier(0.7, 0, 0.3, 1) 0.2s forwards; }
+  .portada[data-saliendo='true'] .shoji--der { animation: corre-der 1s cubic-bezier(0.7, 0, 0.3, 1) 0.2s forwards; }
+
+  @keyframes centro-sale { to { opacity: 0; transform: scale(0.9); } }
+  @keyframes corre-izq { to { transform: translateX(-100%); } }
+  @keyframes corre-der { to { transform: translateX(100%); } }
+</style>

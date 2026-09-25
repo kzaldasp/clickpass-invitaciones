@@ -1,0 +1,180 @@
+---
+/**
+ * Libro de cuentos cerrado. Al tocarlo, la tapa gira sobre el lomo (rotateY)
+ * y deja ver la primera pagina; luego la portada se desvanece.
+ * Solo @keyframes en los hijos (el layout espera el transitionend de la portada).
+ */
+import Castillo from './Castillo.astro';
+
+interface Props { nombre: string; edad?: number; invitado?: string }
+const { nombre, edad, invitado } = Astro.props;
+---
+
+<div class="portada" data-gate-portada>
+  <div class="estrellas" aria-hidden="true">
+    {Array.from({ length: 14 }, (_, i) => <span style={`--i:${i}`} />)}
+  </div>
+
+  <div class="libro">
+    <div class="libro__pagina" aria-hidden="true">
+      <p class="libro__erase">Érase una vez…</p>
+    </div>
+    <button class="libro__tapa" type="button" data-gate-abrir aria-label="Abrir el cuento" data-p-entra>
+      <span class="libro__marco"></span>
+      <span class="libro__castillo"><Castillo trazo={false} /></span>
+      <span class="libro__para">{invitado ? `Para ${invitado}` : 'Un cuento para ti'}</span>
+      <span class="libro__nombre">{nombre}</span>
+      {edad && <span class="libro__edad">cumple {edad}</span>}
+      <span class="libro__abrir">Toca para abrir el cuento</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  import { entradaPortada } from '../kit/animaciones';
+  entradaPortada(document.querySelector('[data-gate-portada]'));
+</script>
+
+<style>
+  .portada {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    background:
+      radial-gradient(circle at 50% 30%, #fff 0%, transparent 60%),
+      linear-gradient(180deg, var(--ca-cielo) 0%, color-mix(in srgb, var(--ca-lila) 35%, var(--ca-cielo)) 100%);
+    opacity: 1;
+  }
+
+  .portada[data-saliendo='true'] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.7s ease 1.6s;
+  }
+
+  .estrellas span {
+    position: absolute;
+    top: calc(8% + (var(--i) * 37 % 80) * 1%);
+    left: calc(6% + (var(--i) * 53 % 88) * 1%);
+    width: 0.7rem;
+    aspect-ratio: 1;
+    background: var(--ca-oro);
+    clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+    animation: titilar 2.4s ease-in-out infinite;
+    animation-delay: calc(var(--i) * -0.33s);
+  }
+
+  @keyframes titilar {
+    0%, 100% { opacity: 0.2; transform: scale(0.6); }
+    50% { opacity: 1; transform: scale(1.1) rotate(45deg); }
+  }
+
+  .libro {
+    position: relative;
+    width: min(19rem, 82vw);
+    aspect-ratio: 3 / 4.2;
+    perspective: 1600px;
+  }
+
+  .libro__pagina {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 0.3rem 0.9rem 0.9rem 0.3rem;
+    background: #fffdf8;
+    box-shadow: 0 30px 60px -30px rgb(80 40 110 / 0.5), inset 12px 0 20px -14px rgb(0 0 0 / 0.2);
+  }
+
+  .libro__erase {
+    font-family: var(--ca-f-deco);
+    font-size: 2.4rem;
+    color: var(--ca-lila-osc);
+  }
+
+  .libro__tapa {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.35rem;
+    padding: 1.6rem 1.2rem;
+    border: 0;
+    border-radius: 0.3rem 0.9rem 0.9rem 0.3rem;
+    background:
+      radial-gradient(circle at 30% 20%, rgb(255 255 255 / 0.25), transparent 50%),
+      linear-gradient(160deg, var(--ca-lila) 0%, var(--ca-lila-osc) 100%);
+    box-shadow: inset 10px 0 0 rgb(0 0 0 / 0.12), 0 24px 50px -20px rgb(80 40 110 / 0.6);
+    color: #fff;
+    cursor: pointer;
+    transform-origin: left center;
+    backface-visibility: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .libro__marco {
+    position: absolute;
+    inset: 0.8rem 0.8rem 0.8rem 1.4rem;
+    border: 1.5px solid var(--ca-oro);
+    border-radius: 0.5rem;
+    pointer-events: none;
+  }
+
+  .libro__castillo {
+    width: 72%;
+    color: var(--ca-oro);
+  }
+
+  .libro__para {
+    margin-top: 0.8rem;
+    font-family: var(--ca-f-cuerpo);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+
+  .libro__nombre {
+    font-family: var(--ca-f-titulo);
+    font-size: clamp(1.9rem, 9vw, 2.5rem);
+    line-height: 1.1;
+    color: #fff;
+    text-shadow: 0 2px 0 rgb(0 0 0 / 0.15);
+  }
+
+  .libro__edad {
+    font-family: var(--ca-f-deco);
+    font-size: 1.8rem;
+    color: var(--ca-oro);
+  }
+
+  .libro__abrir {
+    margin-top: 0.8rem;
+    font-family: var(--ca-f-cuerpo);
+    font-size: 0.8rem;
+    font-style: italic;
+    opacity: 0.85;
+  }
+
+  .portada[data-saliendo='true'] .libro__tapa {
+    animation: abrir-tapa 1.4s cubic-bezier(0.6, 0, 0.3, 1) forwards;
+  }
+
+  .portada[data-saliendo='true'] .libro {
+    animation: libro-crece 1.8s ease-in-out forwards;
+  }
+
+  @keyframes abrir-tapa {
+    to { transform: rotateY(-170deg); }
+  }
+
+  @keyframes libro-crece {
+    60% { transform: translateX(18%) scale(1.05); }
+    100% { transform: translateX(18%) scale(1.25); }
+  }
+</style>

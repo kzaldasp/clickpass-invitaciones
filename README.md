@@ -191,11 +191,41 @@ invitado está en otra zona).
 
 ### Plantillas disponibles
 
-| Plantilla | Para | Qué la hace especial |
+| Plantilla | Para | Apertura y firma |
 |---|---|---|
-| `jardin` | Boda, aniversario | Acuarela botánica: sobre con lacre que se abre en 3D, ramas que se dibujan, hojas que caen, fotos con telón y parallax, save the date, mesa de regalos (extras: link, datos bancarios, lluvia de sobres, hashtag, historia). Paletas salvia, terracota y azul polvo. |
-| `rosa` | XV años, cumpleaños | Sobria y femenina: tarjeta de dos puertas con sello de cera que se abren, flores que florecen, mariposas en vuelo, destellos dorados, itinerario con hilo dorado que se dibuja con el scroll, padres y padrinos, palabras de la quinceañera, vals. Paletas rosa empolvado, lila, champaña y azul cielo. |
-| `aracnido` | Fiesta infantil, cumpleaños | Héroe que baja por su telaraña con el scroll. |
+| `jardin` | Boda, aniversario | Sobre con lacre que se abre en 3D; ramas de acuarela que se dibujan, hojas que caen |
+| `marmol` | Boda moderna | Tarjeta que sale de su funda negra; textura de mármol, pan de oro, fotos en B/N |
+| `mediterraneo` | Boda de playa o civil | Persiana de azulejos que se enrolla; ventana en arco con contraventanas, limonero |
+| `gala` | Boda art déco, XV, graduación | Puertas de ascensor con indicador de piso; abanico dorado que se dibuja |
+| `bohemia` | Boda boho, baby shower | Papel vegetal que se levanta; arco con sol, pampas que se mecen, fotos cálidas |
+| `rosa` | XV años | Tarjeta de dos puertas con sello de cera; flores que florecen, mariposas, destellos |
+| `neon` | Cumpleaños de adultos | Letrero de neón que se enciende parpadeando; tubos de luz, destellos que suben |
+| `sakura` | Estilo anime/manga | Puertas shoji que se deslizan; viñetas con líneas de velocidad, pétalos |
+| `castillo` | Princesa de cuento | Libro de cuentos que se abre; castillo que se dibuja, estrellas |
+| `heroico` | Superhéroes en cómic | Portada de revista que se rasga; onomatopeyas que explotan |
+| `galaxia` | Espacial | Cohete que despega con cuenta atrás; planeta con anillo, estrellas en capas |
+| `jurasico` | Dinosaurios | Huevo que se rompe; volcán, huellas que aparecen al bajar |
+| `aracnido` | Superhéroe arácnido | Héroe que baja por su telaraña con el scroll |
+
+**Temas con personajes:** las plantillas infantiles están *inspiradas* en
+princesas, superhéroes o anime, pero no usan personajes, nombres ni logos con
+marca (Disney, Marvel, series concretas): ClickPass vende las invitaciones y
+eso expondría a reclamos legales.
+
+### Kit de secciones (`src/plantillas/kit/`)
+
+Las plantillas nuevas se arman con secciones compartidas que toman la piel del
+tema por variables CSS (`--k-*`, ver `kit/Base.astro`): `Fecha`, `Familia`,
+`Historia`, `Cuenta`, `Lugares` (tarjetas o línea de tiempo), `Dress`,
+`Regalos`, `Pase` (tarjeta, arco o boleto), `Cierre` y `Foto` (con hueco).
+`kit/animaciones.ts` trae `montarKit()` (nombres letra por letra, fotos que se
+descubren con parallax, trazos que se dibujan) y `lluvia()` (partículas).
+`kit/extras.ts` define los extras comunes (historia, hashtag, regalos,
+transferencia, lluvia de sobres).
+
+Cada plantilla aporta lo que la hace única: su portada (con su apertura), su
+presentación, su decoración, su paleta con presets y su animación propia. El
+kit es opcional: Jardín y Rosa están hechas a mano sin él.
 
 En `jardin`, `galeria[0]` va en el arco de la presentación, `[1]` en "Nuestra
 historia" y `[2]` en el cierre. Si faltan, en borrador y vista previa se ve el

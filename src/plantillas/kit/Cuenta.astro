@@ -1,0 +1,104 @@
+---
+/** Cuenta regresiva al instante UTC del evento + agregar al calendario. */
+import Titulo from './Titulo.astro';
+import AgregarCalendario from '../compartidas/AgregarCalendario.astro';
+import type { EventoVista } from '../tipos';
+
+interface Props {
+  evento: EventoVista;
+  antes?: string;
+  titulo?: string;
+  hoy?: string;
+}
+
+const { evento, antes = 'Solo faltan', titulo = 'para celebrar', hoy = '¡Hoy es el gran día!' } = Astro.props;
+const unidades = [
+  ['dias', 'Días'],
+  ['horas', 'Horas'],
+  ['minutos', 'Min'],
+  ['segundos', 'Seg'],
+] as const;
+---
+
+<section class="escena">
+  <div class="contenedor k-centro">
+    <Titulo antes={antes} titulo={titulo} />
+    <div class="kcuenta" data-k-cuenta={evento.fecha.toISOString()} data-anim="escala">
+      {
+        unidades.map(([clave, etiqueta]) => (
+          <div class="kcuenta__caja">
+            <span class="kcuenta__num" data-unidad={clave}>--</span>
+            <span class="k-caps kcuenta__et">{etiqueta}</span>
+          </div>
+        ))
+      }
+    </div>
+    <p class="k-deco kcuenta__hoy" data-k-hoy hidden>{hoy}</p>
+    <div class="kcuenta__cal" data-anim="sube"><AgregarCalendario evento={evento} /></div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-k-cuenta]').forEach((reloj) => {
+    const objetivo = new Date(reloj.dataset.kCuenta!).getTime();
+    const campo = (k: string) => reloj.querySelector<HTMLElement>(`[data-unidad="${k}"]`)!;
+    const c = [campo('dias'), campo('horas'), campo('minutos'), campo('segundos')];
+    const tic = () => {
+      const resta = objetivo - Date.now();
+      if (resta <= 0) {
+        reloj.hidden = true;
+        reloj.parentElement?.querySelector<HTMLElement>('[data-k-hoy]')?.removeAttribute('hidden');
+        return;
+      }
+      const s = Math.floor(resta / 1000);
+      [Math.floor(s / 86400), Math.floor((s % 86400) / 3600), Math.floor((s % 3600) / 60), s % 60].forEach((v, i) => {
+        const t = String(v).padStart(2, '0');
+        if (c[i].textContent !== t) c[i].textContent = t;
+      });
+      setTimeout(tic, 1000 - (Date.now() % 1000));
+    };
+    tic();
+  });
+</script>
+
+<style>
+  .kcuenta {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    width: min(21rem, 100%);
+  }
+
+  .kcuenta__caja {
+    display: grid;
+    justify-items: center;
+    gap: 0.35rem;
+    padding: 0.9rem 0.2rem 0.7rem;
+    border: var(--k-cuenta-borde, 1px solid var(--k-linea));
+    border-radius: var(--k-cuenta-radio, var(--k-radio));
+    background: var(--k-cuenta-fondo, var(--k-superficie));
+    box-shadow: var(--k-cuenta-sombra, none);
+  }
+
+  .kcuenta__num {
+    font-family: var(--k-f-titulo);
+    font-size: 2.1rem;
+    line-height: 1;
+    color: var(--k-cuenta-num, var(--k-acento));
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  .kcuenta__et {
+    font-size: 0.55rem;
+    letter-spacing: 0.18em;
+  }
+
+  .kcuenta__hoy {
+    font-size: var(--k-deco-tamano);
+  }
+
+  .kcuenta__cal {
+    margin-top: 2rem;
+    color: var(--k-acento);
+  }
+</style>

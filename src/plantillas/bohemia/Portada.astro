@@ -1,0 +1,122 @@
+---
+/**
+ * Un arco con sol y pampas, cubierto por un papel vegetal con los nombres.
+ * Al tocar, el papel se levanta y se va volando suave; luego todo se desvanece.
+ */
+import Pampas from './Pampas.astro';
+
+interface Props { nombre: string; fecha: string; invitado?: string }
+const { nombre, fecha, invitado } = Astro.props;
+---
+
+<div class="portada" data-gate-portada>
+  <div class="arco" aria-hidden="true">
+    <span class="arco__sol"></span>
+    <span class="arco__pampas"><Pampas tallos={6} /></span>
+  </div>
+  <button class="vegetal" type="button" data-gate-abrir aria-label="Abrir invitación" data-p-entra>
+    <span class="vegetal__para">{invitado ? `Para ${invitado}` : 'Con cariño, para ti'}</span>
+    <span class="vegetal__nombre">{nombre}</span>
+    <span class="vegetal__fecha">{fecha}</span>
+    <span class="vegetal__abrir">Toca para abrir</span>
+  </button>
+</div>
+
+<script>
+  import { entradaPortada } from '../kit/animaciones';
+  entradaPortada(document.querySelector('[data-gate-portada]'));
+</script>
+
+<style>
+  .portada {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    background: var(--bo-fondo);
+    opacity: 1;
+  }
+
+  .portada[data-saliendo='true'] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease 1.4s;
+  }
+
+  .arco {
+    position: absolute;
+    width: min(20rem, 84vw);
+    height: min(30rem, 70vh);
+    overflow: hidden;
+    border-radius: 999px 999px 0 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--bo-terracota) 30%, var(--bo-arena)) 0%, var(--bo-arena) 80%);
+  }
+
+  .arco__sol {
+    position: absolute;
+    left: 50%;
+    bottom: 34%;
+    width: 9rem;
+    aspect-ratio: 1;
+    translate: -50% 0;
+    border-radius: 50%;
+    background: var(--bo-terracota);
+    opacity: 0.85;
+  }
+
+  .arco__pampas {
+    position: absolute;
+    inset: auto -10% -2% -10%;
+  }
+
+  .vegetal {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 0.5rem;
+    width: min(18rem, 78vw);
+    min-height: min(22rem, 56vh);
+    padding: 2rem 1.2rem;
+    border: 0;
+    border-radius: 0.3rem;
+    background: rgb(255 252 246 / 0.72);
+    backdrop-filter: blur(3px);
+    box-shadow: 0 20px 40px -24px rgb(90 50 30 / 0.5);
+    color: var(--bo-tinta);
+    cursor: pointer;
+  }
+
+  .vegetal__para {
+    font-family: var(--bo-f-cuerpo);
+    font-size: 0.72rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+
+  .vegetal__nombre {
+    font-family: var(--bo-f-deco);
+    font-size: clamp(2.4rem, 12vw, 3rem);
+    line-height: 1.15;
+    color: var(--bo-arcilla);
+  }
+
+  .vegetal__fecha {
+    font-family: var(--bo-f-titulo);
+    font-size: 1.1rem;
+    letter-spacing: 0.2em;
+  }
+
+  .vegetal__abrir {
+    margin-top: 1rem;
+    font-family: var(--bo-f-cuerpo);
+    font-size: 0.8rem;
+    font-style: italic;
+    opacity: 0.8;
+  }
+
+  .portada[data-saliendo='true'] .vegetal { animation: vuela 1.3s cubic-bezier(0.5, 0, 0.3, 1) forwards; }
+  @keyframes vuela { to { transform: translate(12%, -110%) rotate(-8deg); opacity: 0; } }
+</style>

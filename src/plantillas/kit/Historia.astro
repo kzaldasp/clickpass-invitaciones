@@ -1,0 +1,66 @@
+---
+/** Foto grande + unas palabras. Se omite si no hay foto (fuera de borrador). */
+import Foto from './Foto.astro';
+
+interface Props {
+  foto?: string;
+  hueco: boolean;
+  antes?: string;
+  texto?: string;
+  firma?: string;
+  forma?: 'rect' | 'cuadro' | 'arco';
+}
+
+const { foto, hueco, antes = 'Unas palabras', texto, firma, forma = 'rect' } = Astro.props;
+---
+
+{
+  (foto || hueco || texto) && (
+    <section class="khistoria">
+      {(foto || hueco) && (
+        <div class="khistoria__foto">
+          <Foto src={foto} forma={forma} hueco={hueco} />
+        </div>
+      )}
+      {texto && (
+        <div class="contenedor k-centro khistoria__texto">
+          <p class="k-deco khistoria__antes" data-anim="sube">{antes}</p>
+          <p class="khistoria__frase" data-anim="sube">{texto}</p>
+          {firma && <p class="k-deco khistoria__firma" data-anim="sube">{firma}</p>}
+        </div>
+      )}
+    </section>
+  )
+}
+
+<style>
+  .khistoria {
+    display: grid;
+    gap: 2rem;
+    padding-block: 2rem 4rem;
+  }
+
+  .khistoria__foto {
+    width: min(100%, 34rem);
+    margin-inline: auto;
+  }
+
+  .khistoria__antes {
+    margin: 0;
+    font-size: clamp(2rem, 10vw, 2.6rem);
+  }
+
+  .khistoria__frase {
+    max-width: 22rem;
+    margin: 0.5rem 0 0;
+    font-size: 1.2rem;
+    font-style: italic;
+    line-height: 1.5;
+    text-wrap: balance;
+  }
+
+  .khistoria__firma {
+    margin: 0.6rem 0 0;
+    font-size: 1.8rem;
+  }
+</style>

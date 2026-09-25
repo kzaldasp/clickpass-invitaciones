@@ -1,0 +1,108 @@
+---
+/** Pase del invitado: nombre, lugares reservados y QR de entrada. */
+import QrEntrada from '../compartidas/QrEntrada.astro';
+import type { InvitadoVista } from '../tipos';
+
+interface Props {
+  invitado?: InvitadoVista;
+  linkQr?: string;
+  antes?: string;
+  forma?: 'tarjeta' | 'arco' | 'boleto';
+}
+
+const { invitado, linkQr, antes = 'Esta invitación es para', forma = 'tarjeta' } = Astro.props;
+---
+
+{
+  invitado && (
+    <section class="escena">
+      <div class="contenedor">
+        <div class:list={['kpase', `kpase--${forma}`]} data-anim="escala">
+          <p class="k-caps kpase__antes">{antes}</p>
+          <p class="k-deco kpase__nombre">{invitado.nombre}</p>
+          <div class="kpase__lugares">
+            <span class="kpase__num">{invitado.pases}</span>
+            <span class="k-caps">{invitado.pases === 1 ? 'lugar reservado' : 'lugares reservados'}</span>
+          </div>
+          {invitado.nota && <p class="k-texto-suave">{invitado.nota}</p>}
+          {linkQr && (
+            <div class="kpase__qr">
+              <QrEntrada link={linkQr} />
+              <p class="k-caps kpase__qr-txt">Presenta este código en la entrada</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .kpase {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    padding: 2.4rem 1.4rem 2rem;
+    border: 1px solid var(--k-linea);
+    border-radius: var(--k-radio);
+    background: var(--k-superficie);
+    box-shadow: var(--k-sombra);
+    text-align: center;
+  }
+
+  .kpase--arco {
+    padding-top: 4rem;
+    border-radius: 999px 999px var(--k-radio) var(--k-radio);
+  }
+
+  /* Boleto: muescas laterales como un ticket troquelado. */
+  .kpase--boleto {
+    -webkit-mask: radial-gradient(circle at 0 62%, transparent 0.9rem, #000 0.95rem) left / 51% 100% no-repeat,
+      radial-gradient(circle at 100% 62%, transparent 0.9rem, #000 0.95rem) right / 51% 100% no-repeat;
+    mask: radial-gradient(circle at 0 62%, transparent 0.9rem, #000 0.95rem) left / 51% 100% no-repeat,
+      radial-gradient(circle at 100% 62%, transparent 0.9rem, #000 0.95rem) right / 51% 100% no-repeat;
+  }
+
+  .kpase__antes {
+    margin: 0;
+    font-size: 0.66rem;
+  }
+
+  .kpase__nombre {
+    margin: 0;
+    font-size: clamp(2rem, 10vw, 2.8rem);
+    line-height: 1.15;
+  }
+
+  .kpase__lugares {
+    display: grid;
+    justify-items: center;
+    margin-top: 0.3rem;
+  }
+
+  .kpase__num {
+    font-family: var(--k-f-titulo);
+    font-size: 3.2rem;
+    line-height: 1.05;
+    color: var(--k-texto);
+    font-variant-numeric: lining-nums;
+  }
+
+  .kpase__lugares .k-caps {
+    font-size: 0.64rem;
+  }
+
+  .kpase__qr {
+    --qr-tamano: 8.5rem;
+    display: grid;
+    justify-items: center;
+    gap: 0.6rem;
+    margin-top: 1.1rem;
+  }
+
+  .kpase__qr-txt {
+    margin: 0;
+    font-size: 0.58rem;
+  }
+</style>

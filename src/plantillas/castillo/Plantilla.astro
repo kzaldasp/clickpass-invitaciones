@@ -1,0 +1,169 @@
+---
+/**
+ * Castillo: cumpleanos de princesa (tema de cuento, sin personajes con marca).
+ * Portada libro de cuentos -> castillo que se dibuja + nombre + edad con corona
+ * -> fecha -> padres -> cuenta regresiva -> el reino (lugares) -> dress code
+ * -> regalos -> pase real -> confirmacion -> cierre. Estrellas que caen.
+ */
+import Invitacion from '../../layouts/Invitacion.astro';
+import Confirmacion from '../compartidas/Confirmacion.astro';
+import Base from '../kit/Base.astro';
+import Foto from '../kit/Foto.astro';
+import Fecha from '../kit/Fecha.astro';
+import Familia from '../kit/Familia.astro';
+import Cuenta from '../kit/Cuenta.astro';
+import Lugares from '../kit/Lugares.astro';
+import Dress from '../kit/Dress.astro';
+import Regalos from '../kit/Regalos.astro';
+import Pase from '../kit/Pase.astro';
+import Cierre from '../kit/Cierre.astro';
+import Portada from './Portada.astro';
+import Castillo from './Castillo.astro';
+import { extraTexto } from '../kit/extras';
+import { manifiesto } from './manifiesto';
+import type { PropsPlantilla } from '../tipos';
+
+type Props = PropsPlantilla;
+const { evento, invitado, confirmacion } = Astro.props;
+const d = evento.contenido;
+const x = d.extras as Record<string, unknown>;
+const hueco = evento.estado === 'borrador' || confirmacion.modo === 'demo';
+const preset = manifiesto.presets?.find((p) => p.id === evento.preset);
+const linkQr = invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}` : undefined;
+---
+
+<Invitacion
+  titulo={`${d.festejado.nombre} · ${d.tipo}`}
+  descripcion={invitado ? `${invitado.nombre}, estás invitado a un cumpleaños de cuento.` : (d.frase ?? d.tipo)}
+  imagen={d.galeria[0] ?? manifiesto.portada}
+  tema="castillo"
+  colorTema={manifiesto.colorTema}
+  variables={preset?.variables}
+  borrador={evento.estado === 'borrador'}
+  musica={d.musica?.archivo}
+>
+  <Base />
+  <Portada nombre={d.festejado.nombre} edad={d.festejado.edad} invitado={invitado?.nombre} />
+
+  <div class="k-particulas" aria-hidden="true">
+    {Array.from({ length: 10 }, (_, i) => <span class="ca-estrella" data-ca-estrella style={`--t:${0.5 + (i % 3) * 0.25}rem`} />)}
+  </div>
+
+  <main data-kit>
+    <section class="escena">
+      <div class="contenedor k-centro ca-heroe">
+        <div class="ca-heroe__castillo"><Castillo /></div>
+        <p class="k-deco ca-heroe__erase" data-anim="sube">{d.tipo}</p>
+        <h1 class="ca-heroe__nombre" data-k-split>{d.festejado.nombre}</h1>
+        {
+          d.festejado.edad && (
+            <div class="ca-edad" data-anim="escala">
+              <svg viewBox="0 0 60 30" class="ca-edad__corona" aria-hidden="true">
+                <path d="M4 26 L8 6 L20 18 L30 2 L40 18 L52 6 L56 26 Z" fill="currentColor" />
+              </svg>
+              <span class="ca-edad__num">{d.festejado.edad}</span>
+              <span class="k-caps">años</span>
+            </div>
+          )
+        }
+        {d.frase && <p class="k-texto-suave" data-anim="sube">{d.frase}</p>}
+        <div class="ca-heroe__foto" data-anim="sube"><Foto src={d.galeria[0]} forma="circulo" hueco={hueco} /></div>
+      </div>
+    </section>
+
+    <Fecha evento={evento} antes="Te espero el" titulo="día mágico" />
+    <Familia anfitriones={d.anfitriones} />
+    <Cuenta evento={evento} antes="Faltan" titulo="para el baile real" />
+    <Lugares lugares={d.lugares} zona={evento.zonaHoraria} antes="El reino te espera en" titulo="el castillo" textoMapa="Cómo llegar" />
+    {
+      d.dressCode && (
+        <Dress titulo={d.dressCode.titulo} nota={d.dressCode.nota} antes="Vestimenta">
+          <svg viewBox="0 0 60 30" width="70" aria-hidden="true"><path d="M4 26 L8 6 L20 18 L30 2 L40 18 L52 6 L56 26 Z" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+        </Dress>
+      )
+    }
+    <Regalos extras={x} antes="Un detalle para" titulo="la princesa" />
+    <Pase invitado={invitado} linkQr={linkQr} antes="Invitación real para" forma="arco" />
+    <section class="escena">
+      <div class="contenedor k-confirmacion" data-anim="sube">
+        <Confirmacion confirmacion={confirmacion} invitado={invitado} zonaHoraria={evento.zonaHoraria} titulo="¿Vienes al baile?" />
+      </div>
+    </section>
+    <Cierre foto={d.galeria[1]} hueco={false} despedida={d.despedida} hashtag={extraTexto(x, 'hashtag')}>
+      <div style="width:9rem;color:var(--k-acento)"><Castillo /></div>
+    </Cierre>
+  </main>
+</Invitacion>
+
+<script>
+  import { montarKit, lluvia } from '../kit/animaciones';
+  document.addEventListener('invitacion:abierta', () => {
+    montarKit({ entradaFoto: 'circulo' });
+    lluvia('[data-ca-estrella]', { duracion: [12, 18], balanceo: 40, giro: 180 });
+  });
+</script>
+
+<style is:global>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Great+Vibes&family=Quicksand:wght@400;500;700&display=swap');
+
+  html[data-tema='castillo'] {
+    --ca-cielo: #f7f1fb;
+    --ca-lila: #b49bd6;
+    --ca-lila-osc: #6f4f9c;
+    --ca-oro: #d4af6a;
+    --ca-tinta: #3f3350;
+    --ca-f-titulo: 'Cinzel Decorative', Georgia, serif;
+    --ca-f-deco: 'Great Vibes', cursive;
+    --ca-f-cuerpo: 'Quicksand', system-ui, sans-serif;
+    --c-fondo: var(--ca-cielo);
+    --c-texto: var(--ca-tinta);
+    --f-cuerpo: var(--ca-f-cuerpo);
+    --f-titulo: var(--ca-f-titulo);
+  }
+
+  html[data-tema='castillo'] body {
+    background:
+      radial-gradient(circle at 20% 10%, #fff 0%, transparent 40%),
+      radial-gradient(circle at 80% 60%, color-mix(in srgb, var(--ca-lila) 18%, transparent) 0%, transparent 50%),
+      var(--ca-cielo);
+    background-attachment: fixed;
+  }
+
+  html[data-tema='castillo'] [data-kit] {
+    --k-superficie: #fffdfe;
+    --k-texto: var(--ca-tinta);
+    --k-suave: color-mix(in srgb, var(--ca-tinta) 65%, white);
+    --k-acento: var(--ca-lila-osc);
+    --k-acento-texto: #fff;
+    --k-linea: color-mix(in srgb, var(--ca-oro) 60%, transparent);
+    --k-f-titulo: var(--ca-f-titulo);
+    --k-f-cuerpo: var(--ca-f-cuerpo);
+    --k-f-deco: var(--ca-f-deco);
+    --k-radio: 1.2rem;
+    --k-sombra: 0 22px 44px -26px rgb(90 50 130 / 0.45);
+    --k-cuenta-radio: 999px 999px 0.8rem 0.8rem;
+  }
+
+  .ca-heroe { gap: 0.4rem; }
+  .ca-heroe__castillo { width: min(15rem, 70vw); color: var(--ca-oro); margin-bottom: 0.6rem; }
+  .ca-heroe__erase { margin: 0; font-size: var(--k-deco-tamano); }
+  .ca-heroe__nombre {
+    margin: 0;
+    font-family: var(--ca-f-titulo);
+    font-size: clamp(2.4rem, 12vw, 3.6rem);
+    font-weight: 700;
+    line-height: 1.05;
+    color: var(--ca-lila-osc);
+  }
+  .ca-edad { display: grid; justify-items: center; margin: 0.6rem 0 0.8rem; }
+  .ca-edad__corona { width: 3.4rem; color: var(--ca-oro); }
+  .ca-edad__num { font-family: var(--ca-f-titulo); font-size: 4rem; line-height: 1; color: var(--ca-tinta); }
+  .ca-heroe__foto { width: min(14rem, 62vw); margin-top: 1.6rem; --k-foto-filete: 2px solid var(--ca-oro); }
+
+  .ca-estrella {
+    width: var(--t);
+    aspect-ratio: 1;
+    background: var(--ca-oro);
+    clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  }
+</style>

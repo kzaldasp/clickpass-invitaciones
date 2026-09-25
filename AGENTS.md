@@ -21,6 +21,10 @@ arquitectura y el modelo de datos, y `docs/ilustraciones.md` para el arte.
 - **Plantillas sin parámetros de diseño.** Libertad visual total; el contrato es
   solo props de entrada (`src/plantillas/tipos.ts`), `manifiesto.ts` y colocar
   `<Confirmacion />`. Sus estilos globales van bajo `html[data-tema='<slug>']`.
+- **Plantillas nuevas: usa el kit** (`src/plantillas/kit/`) para las secciones
+  comunes y pon el caracter en la portada, la presentacion y la decoracion. Las
+  variables del tema van en `html[data-tema='x'] [data-kit]`. Sin personajes ni
+  logos con marca.
 - **Manifiestos y componentes en registros separados.** Admin, panel y catálogo
   importan `src/plantillas/index.ts` (solo datos). Solo las rutas que dibujan
   una invitación importan `src/plantillas/componentes.ts`: importar un `.astro`

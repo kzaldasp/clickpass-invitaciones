@@ -1,0 +1,21 @@
+---
+/** Silueta de castillo en linea: torres, almenas y banderines. Se dibuja con [data-k-trazo]. */
+interface Props { trazo?: boolean }
+const { trazo = true } = Astro.props;
+---
+
+<svg class="castillo-svg" viewBox="0 0 240 170" aria-hidden="true" data-k-trazo={trazo ? '' : undefined}>
+  <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M20 166V88h26v78M46 110h34V64h20v-8h40v8h20v46h34M194 166V88h26v78" />
+    <path d="M20 88l13-30 13 30M194 88l13-30 13 30M100 56l20-36 20 36" />
+    <path d="M33 58V42l10 4-10 4M207 58V42l10 4-10 4M120 20V6l12 5-12 5" />
+    <path d="M80 166v-44h80v44M108 166v-22a12 12 0 0 1 24 0v22M6 166h228" />
+    <path d="M60 110v-8h6v8M86 110v-8h6v8M148 110v-8h6v8M174 110v-8h6v8" />
+    <circle cx="120" cy="82" r="8" />
+    <path d="M27 104h12v10H27zM201 104h12v10h-12z" />
+  </g>
+</svg>
+
+<style>
+  .castillo-svg { display: block; width: 100%; overflow: visible; }
+</style>

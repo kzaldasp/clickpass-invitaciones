@@ -1,0 +1,120 @@
+---
+/**
+ * Persiana de azulejos. Al tocar, se enrolla hacia arriba (scaleY desde el
+ * borde superior) y deja ver la invitacion. Solo @keyframes en los hijos.
+ */
+import Azulejo from './Azulejo.astro';
+import Limonero from './Limonero.astro';
+
+interface Props { nombre: string; fecha: string; invitado?: string }
+const { nombre, fecha, invitado } = Astro.props;
+---
+
+<div class="portada" data-gate-portada>
+  <Azulejo id="me-azulejo-portada" />
+  <div class="persiana" aria-hidden="true">
+    <svg width="100%" height="100%"><rect width="100%" height="100%" fill="url(#me-azulejo-portada)" /></svg>
+  </div>
+  <div class="placa">
+    <span class="placa__rama"><Limonero /></span>
+    <p class="placa__para" data-p-entra>{invitado ? `Para ${invitado}` : 'Estás invitado'}</p>
+    <p class="placa__nombre" data-p-entra>{nombre}</p>
+    <p class="placa__fecha" data-p-entra>{fecha}</p>
+    <button class="placa__boton" type="button" data-gate-abrir data-p-entra>Abrir invitación</button>
+  </div>
+</div>
+
+<script>
+  import { entradaPortada } from '../kit/animaciones';
+  entradaPortada(document.querySelector('[data-gate-portada]'));
+</script>
+
+<style>
+  .portada {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    opacity: 1;
+  }
+
+  .portada[data-saliendo='true'] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease 1.3s;
+  }
+
+  .persiana {
+    position: absolute;
+    inset: 0;
+    transform-origin: top center;
+  }
+
+  .placa {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    width: min(20rem, 88vw);
+    padding: 3rem 1.5rem 2rem;
+    border: 6px double var(--me-azul);
+    border-radius: 999px 999px 0.6rem 0.6rem;
+    background: #fdfcf8;
+    box-shadow: 0 20px 50px -20px rgb(20 40 80 / 0.5);
+    text-align: center;
+  }
+
+  .placa__rama {
+    position: absolute;
+    top: -1.2rem;
+    right: -2.4rem;
+    width: 9rem;
+  }
+
+  .placa__para {
+    margin: 0;
+    font-family: var(--me-f-cuerpo);
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--me-azul);
+  }
+
+  .placa__nombre {
+    margin: 0;
+    font-family: var(--me-f-deco);
+    font-size: clamp(2.4rem, 12vw, 3rem);
+    line-height: 1.15;
+    color: var(--me-azul);
+  }
+
+  .placa__fecha {
+    margin: 0;
+    font-family: var(--me-f-titulo);
+    letter-spacing: 0.25em;
+    color: var(--me-tinta);
+  }
+
+  .placa__boton {
+    margin-top: 1rem;
+    min-height: 3rem;
+    padding: 0.6rem 1.8rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--me-azul);
+    font-family: var(--me-f-cuerpo);
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .portada[data-saliendo='true'] .placa { animation: placa-sale 0.5s ease-in forwards; }
+  .portada[data-saliendo='true'] .persiana { animation: enrolla 1.1s cubic-bezier(0.7, 0, 0.3, 1) 0.3s forwards; }
+
+  @keyframes placa-sale { to { opacity: 0; transform: translateY(-1rem); } }
+  @keyframes enrolla { to { transform: scaleY(0); } }
+</style>

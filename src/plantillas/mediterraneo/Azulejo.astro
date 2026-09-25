@@ -1,0 +1,22 @@
+---
+/** Patron de azulejo (definicion SVG) + tira decorativa. Uso: <Azulejo tira /> */
+interface Props { tira?: boolean; id?: string }
+const { tira = false, id = 'me-azulejo' } = Astro.props;
+---
+
+<svg class:list={['azulejo', { 'azulejo--tira': tira }]} aria-hidden="true" width="100%" height={tira ? 36 : 0}>
+  <defs>
+    <pattern id={id} width="36" height="36" patternUnits="userSpaceOnUse">
+      <rect width="36" height="36" fill="#fff" />
+      <path d="M18 2 C24 10 26 12 34 18 C26 24 24 26 18 34 C12 26 10 24 2 18 C10 12 12 10 18 2 Z" fill="none" stroke="var(--me-azul)" stroke-width="1.6" />
+      <circle cx="18" cy="18" r="4" fill="var(--me-azul)" />
+      <path d="M0 0 h6 a6 6 0 0 1 -6 6 Z M36 0 v6 a6 6 0 0 1 -6 -6 Z M0 36 v-6 a6 6 0 0 1 6 6 Z M36 36 h-6 a6 6 0 0 1 6 -6 Z" fill="var(--me-azul-claro)" />
+    </pattern>
+  </defs>
+  {tira && <rect width="100%" height="36" fill={`url(#${id})`} />}
+</svg>
+
+<style>
+  .azulejo { display: block; }
+  .azulejo:not(.azulejo--tira) { position: absolute; width: 0; height: 0; }
+</style>

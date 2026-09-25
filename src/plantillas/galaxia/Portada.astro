@@ -1,0 +1,158 @@
+---
+/**
+ * Plataforma de lanzamiento. "¡Despegar!" dispara una cuenta atras 3-2-1 y el
+ * cohete sale disparado hacia arriba; luego la portada se desvanece.
+ */
+import Cohete from './Cohete.astro';
+
+interface Props { nombre: string; edad?: number; invitado?: string }
+const { nombre, edad, invitado } = Astro.props;
+---
+
+<div class="portada" data-gate-portada>
+  <div class="portada__texto">
+    <p class="portada__mision" data-p-entra>{invitado ? `Tripulante: ${invitado}` : 'Misión especial'}</p>
+    <p class="portada__nombre" data-p-entra>{nombre}</p>
+    {edad && <p class="portada__edad" data-p-entra>cumple {edad} años luz</p>}
+  </div>
+  <div class="portada__cohete"><Cohete /></div>
+  <div class="portada__cuenta" aria-hidden="true"><span>3</span><span>2</span><span>1</span></div>
+  <div class="portada__base" aria-hidden="true"></div>
+  <button class="portada__boton" type="button" data-gate-abrir data-p-entra>¡Despegar! 🚀</button>
+</div>
+
+<script>
+  import { entradaPortada, gsap, movimientoReducido } from '../kit/animaciones';
+  const p = document.querySelector<HTMLElement>('[data-gate-portada]');
+  entradaPortada(p);
+  if (p && !movimientoReducido()) {
+    gsap.to(p.querySelector('.portada__cohete'), { y: -8, duration: 1.4, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  }
+</script>
+
+<style>
+  .portada {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    overflow: hidden;
+    background:
+      radial-gradient(1px 1px at 20% 30%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 70% 20%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 40% 70%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 85% 60%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 10% 85%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 55% 45%, #fff 50%, transparent 51%),
+      radial-gradient(ellipse at 50% 120%, color-mix(in srgb, var(--ga-violeta) 60%, transparent) 0%, transparent 60%),
+      var(--ga-fondo);
+    opacity: 1;
+  }
+
+  .portada[data-saliendo='true'] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease 2.9s;
+  }
+
+  .portada__texto {
+    position: absolute;
+    top: 9%;
+    inset-inline: 0;
+    display: grid;
+    justify-items: center;
+    gap: 0.3rem;
+    text-align: center;
+  }
+
+  .portada__mision {
+    margin: 0;
+    font-family: var(--ga-f-cuerpo);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ga-cian);
+  }
+
+  .portada__nombre {
+    margin: 0;
+    font-family: var(--ga-f-titulo);
+    font-size: clamp(2.6rem, 14vw, 3.8rem);
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 24px color-mix(in srgb, var(--ga-violeta) 80%, transparent);
+  }
+
+  .portada__edad {
+    margin: 0;
+    font-family: var(--ga-f-cuerpo);
+    color: #cfd6ff;
+  }
+
+  .portada__cohete {
+    position: absolute;
+    left: 50%;
+    bottom: 22%;
+    width: 5.5rem;
+    translate: -50% 0;
+  }
+
+  .portada__base {
+    position: absolute;
+    left: 50%;
+    bottom: 19%;
+    width: 11rem;
+    height: 0.8rem;
+    translate: -50% 0;
+    border-radius: 999px;
+    background: #2a3160;
+  }
+
+  .portada__cuenta {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+
+  .portada__cuenta span {
+    grid-area: 1 / 1;
+    font-family: var(--ga-f-titulo);
+    font-size: 8rem;
+    font-weight: 900;
+    color: #fff;
+    opacity: 0;
+  }
+
+  .portada__boton {
+    position: absolute;
+    left: 50%;
+    bottom: 7%;
+    translate: -50% 0;
+    min-height: 3.2rem;
+    padding: 0.7rem 2.2rem;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--ga-violeta), var(--ga-cian));
+    font-family: var(--ga-f-titulo);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #fff;
+    white-space: nowrap;
+    box-shadow: 0 0 30px color-mix(in srgb, var(--ga-violeta) 70%, transparent);
+    cursor: pointer;
+  }
+
+  .portada[data-saliendo='true'] .portada__boton,
+  .portada[data-saliendo='true'] .portada__texto { animation: desvanece 0.4s forwards; }
+  .portada[data-saliendo='true'] .portada__cuenta span:nth-child(1) { animation: cuenta 0.6s ease-out 0.1s; }
+  .portada[data-saliendo='true'] .portada__cuenta span:nth-child(2) { animation: cuenta 0.6s ease-out 0.7s; }
+  .portada[data-saliendo='true'] .portada__cuenta span:nth-child(3) { animation: cuenta 0.6s ease-out 1.3s; }
+  .portada[data-saliendo='true'] .portada__cohete { animation: despegue 1.3s cubic-bezier(0.6, 0, 0.9, 0.4) 1.8s forwards; }
+
+  @keyframes desvanece { to { opacity: 0; } }
+  @keyframes cuenta { 0% { opacity: 0; transform: scale(2); } 30% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.6); } }
+  @keyframes despegue { 0% { transform: translateY(0); } 15% { transform: translate(-2px, 4px); } 100% { transform: translateY(-120vh); } }
+</style>

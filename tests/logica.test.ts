@@ -16,6 +16,7 @@ import { hashClave, verificarClave } from '../src/lib/claves';
 import { manifiesto as aracnido } from '../src/plantillas/aracnido/manifiesto';
 import { manifiesto as jardin } from '../src/plantillas/jardin/manifiesto';
 import { manifiesto as rosa } from '../src/plantillas/rosa/manifiesto';
+import { plantillas } from '../src/plantillas';
 
 const form = (datos: Record<string, string>) => {
   const f = new FormData();
@@ -169,6 +170,15 @@ describe('utilidades', () => {
 
 describe('plantillas', () => {
   it('el contenido de demo de cada manifiesto es valido', () => {
-    for (const m of [aracnido, jardin, rosa]) assert.ok(contenidoEvento.safeParse(m.demo.contenido).success, m.slug);
+    for (const m of [aracnido, jardin, rosa, ...plantillas()]) assert.ok(contenidoEvento.safeParse(m.demo.contenido).success, m.slug);
+  });
+
+  it('cada plantilla tiene slug unico, portada y fotos de demo existentes', async () => {
+    const { existsSync } = await import('node:fs');
+    const slugs = plantillas().map((m) => m.slug);
+    assert.equal(new Set(slugs).size, slugs.length);
+    for (const m of plantillas()) {
+      for (const ruta of [m.portada, ...m.demo.contenido.galeria]) assert.ok(existsSync(`public${ruta}`), `${m.slug}: falta ${ruta}`);
+    }
   });
 });

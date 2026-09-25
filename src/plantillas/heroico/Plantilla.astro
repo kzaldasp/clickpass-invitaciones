@@ -1,0 +1,233 @@
+---
+/**
+ * Heroico: cumpleanos de superheroes en estilo comic (sin personajes con marca).
+ * Portada de revista que se rasga -> heroe en vinetas con globo de dialogo ->
+ * fecha -> base secreta (lugares) -> cuenta regresiva -> dress code -> regalos
+ * -> credencial de agente (pase) -> confirmacion -> cierre. Onomatopeyas que
+ * explotan al bajar.
+ */
+import Invitacion from '../../layouts/Invitacion.astro';
+import Confirmacion from '../compartidas/Confirmacion.astro';
+import Base from '../kit/Base.astro';
+import Foto from '../kit/Foto.astro';
+import Fecha from '../kit/Fecha.astro';
+import Familia from '../kit/Familia.astro';
+import Cuenta from '../kit/Cuenta.astro';
+import Lugares from '../kit/Lugares.astro';
+import Dress from '../kit/Dress.astro';
+import Regalos from '../kit/Regalos.astro';
+import Pase from '../kit/Pase.astro';
+import Cierre from '../kit/Cierre.astro';
+import Portada from './Portada.astro';
+import { extraTexto } from '../kit/extras';
+import { manifiesto } from './manifiesto';
+import type { PropsPlantilla } from '../tipos';
+
+type Props = PropsPlantilla;
+const { evento, invitado, confirmacion } = Astro.props;
+const d = evento.contenido;
+const x = d.extras as Record<string, unknown>;
+const hueco = evento.estado === 'borrador' || confirmacion.modo === 'demo';
+const preset = manifiesto.presets?.find((p) => p.id === evento.preset);
+const linkQr = invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}` : undefined;
+---
+
+<Invitacion
+  titulo={`${d.festejado.nombre} · ${d.tipo}`}
+  descripcion={invitado ? `${invitado.nombre}, ¡te necesitamos en la misión!` : (d.frase ?? d.tipo)}
+  imagen={d.galeria[0] ?? manifiesto.portada}
+  tema="heroico"
+  colorTema={manifiesto.colorTema}
+  variables={preset?.variables}
+  borrador={evento.estado === 'borrador'}
+  musica={d.musica?.archivo}
+>
+  <Base />
+  <Portada nombre={d.festejado.nombre} edad={d.festejado.edad} invitado={invitado?.nombre} />
+
+  <main data-kit>
+    <section class="escena">
+      <div class="contenedor he-heroe">
+        <p class="he-globo" data-anim="escala">{d.tipo}</p>
+        <div class="he-vineta he-vineta--nombre" data-anim="sube">
+          <h1 class="he-nombre" data-k-split>{d.festejado.nombre}</h1>
+          {d.festejado.edad && <p class="he-edad"><span>{d.festejado.edad}</span> años de pura acción</p>}
+        </div>
+        <div class="he-fila">
+          <div class="he-vineta he-vineta--foto" data-anim="sube"><Foto src={d.galeria[0]} forma="cuadro" hueco={hueco} texto="Tu foto de héroe" /></div>
+          <span class="he-boom" data-he-boom>¡BOOM!</span>
+        </div>
+        {d.frase && <p class="he-cartela" data-anim="sube">{d.frase}</p>}
+      </div>
+    </section>
+
+    <div class="he-sep"><span class="he-boom he-boom--zap" data-he-boom>¡ZAP!</span></div>
+    <Fecha evento={evento} antes="Marca en tu agenda" titulo="¡El gran día!" />
+    <Familia anfitriones={d.anfitriones} />
+    <Cuenta evento={evento} antes="Cuenta regresiva" titulo="¡Para la misión!" hoy="¡Hoy es la misión!" />
+    <div class="he-sep"><span class="he-boom he-boom--kapow" data-he-boom>¡KAPOW!</span></div>
+    <Lugares lugares={d.lugares} zona={evento.zonaHoraria} antes="Coordenadas de" titulo="la base secreta" textoMapa="Ir a la base" />
+    {d.dressCode && <Dress titulo={d.dressCode.titulo} nota={d.dressCode.nota} antes="Uniforme de la misión" />}
+    <Regalos extras={x} antes="Un detalle para" titulo="el héroe" />
+    <Pase invitado={invitado} linkQr={linkQr} antes="Credencial de agente" forma="boleto" />
+    <section class="escena">
+      <div class="contenedor k-confirmacion" data-anim="sube">
+        <Confirmacion confirmacion={confirmacion} invitado={invitado} zonaHoraria={evento.zonaHoraria} titulo="¿Te unes al equipo?" />
+      </div>
+    </section>
+    <Cierre foto={d.galeria[1]} hueco={false} despedida={d.despedida} hashtag={extraTexto(x, 'hashtag')}>
+      <span class="he-boom he-boom--fin" data-he-boom>¡FIN!</span>
+    </Cierre>
+  </main>
+</Invitacion>
+
+<script>
+  import { montarKit, gsap, movimientoReducido } from '../kit/animaciones';
+  document.addEventListener('invitacion:abierta', () => {
+    montarKit({ entradaFoto: 'lados' });
+    if (movimientoReducido()) return;
+    // Onomatopeyas: explotan con rebote al entrar en pantalla.
+    document.querySelectorAll('[data-he-boom]').forEach((el) => {
+      gsap.from(el, {
+        scale: 0,
+        rotate: -30,
+        duration: 0.7,
+        ease: 'back.out(3)',
+        scrollTrigger: { trigger: el, start: 'top 90%', once: true },
+      });
+    });
+  });
+</script>
+
+<style is:global>
+  @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@500;700;800;900&display=swap');
+
+  html[data-tema='heroico'] {
+    --he-amarillo: #ffd23f;
+    --he-rojo: #e63946;
+    --he-azul: #1d4ed8;
+    --he-tinta: #111;
+    --he-papel: #fffaf0;
+    --he-f-titulo: 'Bangers', Impact, sans-serif;
+    --he-f-cuerpo: 'Nunito', system-ui, sans-serif;
+    --c-fondo: var(--he-papel);
+    --c-texto: var(--he-tinta);
+    --f-cuerpo: var(--he-f-cuerpo);
+    --f-titulo: var(--he-f-titulo);
+  }
+
+  html[data-tema='heroico'] body {
+    background:
+      radial-gradient(circle, color-mix(in srgb, var(--he-azul) 16%, transparent) 1.3px, transparent 1.8px) 0 0 / 12px 12px,
+      var(--he-papel);
+  }
+
+  html[data-tema='heroico'] [data-kit] {
+    --k-superficie: #fff;
+    --k-texto: var(--he-tinta);
+    --k-suave: #444;
+    --k-acento: var(--he-rojo);
+    --k-acento-texto: #fff;
+    --k-linea: var(--he-tinta);
+    --k-f-titulo: var(--he-f-titulo);
+    --k-f-cuerpo: var(--he-f-cuerpo);
+    --k-f-deco: var(--he-f-titulo);
+    --k-caps-espaciado: 0.14em;
+    --k-radio: 0.3rem;
+    --k-sombra: 6px 6px 0 var(--he-tinta);
+    --k-deco-tamano: clamp(2.6rem, 13vw, 3.4rem);
+    --k-cuenta-borde: 3px solid var(--he-tinta);
+    --k-cuenta-fondo: var(--he-amarillo);
+    --k-cuenta-sombra: 4px 4px 0 var(--he-tinta);
+    --k-cuenta-num: var(--he-tinta);
+    --k-foto-filete: 0;
+    --k-radio-boton: 0.3rem;
+  }
+
+  html[data-tema='heroico'] [data-kit] .k-deco {
+    color: var(--he-rojo);
+    -webkit-text-stroke: 1.5px var(--he-tinta);
+    letter-spacing: 0.03em;
+    text-shadow: 3px 3px 0 var(--he-tinta);
+  }
+
+  html[data-tema='heroico'] [data-kit] .k-caps { font-weight: 900; color: var(--he-azul); }
+  html[data-tema='heroico'] [data-kit] .k-tarjeta,
+  html[data-tema='heroico'] [data-kit] .klugar,
+  html[data-tema='heroico'] [data-kit] .kpase { border-width: 3px !important; }
+  html[data-tema='heroico'] [data-kit] .k-boton { border-width: 3px; border-color: var(--he-tinta); box-shadow: 3px 3px 0 var(--he-tinta); }
+  html[data-tema='heroico'] .k-confirmacion .conf { border-width: 3px; box-shadow: 6px 6px 0 var(--he-tinta); }
+  html[data-tema='heroico'] .k-confirmacion .conf__titulo { -webkit-text-stroke: 1.5px var(--he-tinta); }
+
+  .he-heroe { display: grid; justify-items: center; gap: 1rem; text-align: center; }
+  .he-globo {
+    position: relative;
+    margin: 0;
+    padding: 0.7rem 1.3rem;
+    border: 3px solid var(--he-tinta);
+    border-radius: 1.6rem;
+    background: #fff;
+    font-family: var(--he-f-titulo);
+    font-size: 1.8rem;
+    letter-spacing: 0.04em;
+    color: var(--he-azul);
+    box-shadow: 4px 4px 0 var(--he-tinta);
+  }
+  .he-globo::after {
+    content: '';
+    position: absolute;
+    bottom: -18px;
+    left: 30%;
+    border: 9px solid transparent;
+    border-top: 12px solid var(--he-tinta);
+  }
+  .he-vineta {
+    width: 100%;
+    padding: 1.2rem;
+    border: 3px solid var(--he-tinta);
+    background:
+      repeating-conic-gradient(from 0deg at 50% 50%, rgb(255 255 255 / 0.4) 0deg 6deg, transparent 6deg 18deg),
+      var(--he-amarillo);
+    box-shadow: 6px 6px 0 var(--he-tinta);
+  }
+  .he-vineta--nombre { transform: rotate(-1.5deg); }
+  .he-nombre {
+    margin: 0;
+    font-family: var(--he-f-titulo);
+    font-size: clamp(3.4rem, 19vw, 5.6rem);
+    line-height: 0.95;
+    color: #fff;
+    -webkit-text-stroke: 3px var(--he-tinta);
+    text-shadow: 5px 5px 0 var(--he-rojo), 6px 6px 0 var(--he-tinta);
+  }
+  .he-edad { margin: 0.4rem 0 0; font-weight: 900; text-transform: uppercase; }
+  .he-edad span { font-family: var(--he-f-titulo); font-size: 2.4rem; color: var(--he-rojo); }
+  .he-fila { position: relative; width: 100%; }
+  .he-vineta--foto { padding: 0.6rem; background: #fff; transform: rotate(1.5deg); }
+  .he-cartela {
+    margin: 0;
+    padding: 0.8rem 1rem;
+    border: 3px solid var(--he-tinta);
+    background: #fff7c2;
+    font-weight: 800;
+    text-align: left;
+    box-shadow: 4px 4px 0 var(--he-tinta);
+  }
+  .he-sep { display: grid; place-items: center; padding-block: 1rem; }
+  .he-boom {
+    display: inline-grid;
+    place-items: center;
+    width: 8rem;
+    aspect-ratio: 1.3;
+    background: var(--he-amarillo);
+    clip-path: polygon(50% 0, 61% 20%, 84% 8%, 80% 32%, 100% 42%, 80% 56%, 92% 80%, 68% 76%, 58% 100%, 46% 80%, 22% 94%, 26% 70%, 0 62%, 18% 46%, 4% 24%, 30% 26%, 36% 4%);
+    font-family: var(--he-f-titulo);
+    font-size: 1.7rem;
+    color: var(--he-rojo);
+    -webkit-text-stroke: 1.2px var(--he-tinta);
+  }
+  .he-fila .he-boom { position: absolute; top: -1.4rem; right: -0.6rem; z-index: 2; }
+  .he-boom--zap { background: var(--he-azul); color: #fff; transform: rotate(-8deg); }
+  .he-boom--kapow { background: var(--he-rojo); color: #fff; transform: rotate(6deg); }
+  .he-boom--fin { width: 9rem; }
+</style>

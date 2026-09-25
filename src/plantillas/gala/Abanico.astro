@@ -1,0 +1,20 @@
+---
+/** Abanico art deco: semicirculos concentricos y rayos. Se dibuja con [data-k-trazo]. */
+---
+
+<svg class="abanico" viewBox="0 0 200 110" aria-hidden="true" data-k-trazo>
+  <g fill="none" stroke="currentColor" stroke-width="1.2">
+    <path d="M10 105 A90 90 0 0 1 190 105" />
+    <path d="M30 105 A70 70 0 0 1 170 105" />
+    <path d="M52 105 A48 48 0 0 1 148 105" />
+    {Array.from({ length: 13 }, (_, i) => {
+      const a = Math.PI - (i * Math.PI) / 12;
+      return <line x1={100 + 48 * Math.cos(a)} y1={105 - 48 * Math.sin(a)} x2={100 + 90 * Math.cos(a)} y2={105 - 90 * Math.sin(a)} />;
+    })}
+    <path d="M4 105 H196" />
+  </g>
+</svg>
+
+<style>
+  .abanico { display: block; width: 100%; overflow: visible; }
+</style>

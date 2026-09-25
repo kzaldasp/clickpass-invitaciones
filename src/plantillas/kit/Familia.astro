@@ -1,0 +1,46 @@
+---
+/** Padres (anfitriones) y padrinos u otros grupos, uno por linea. */
+interface Props {
+  anfitriones?: { titulo: string; nombres: string[] };
+  grupos?: { titulo: string; nombres: string[] }[];
+}
+
+const { anfitriones, grupos = [] } = Astro.props;
+const todos = [...(anfitriones ? [anfitriones] : []), ...grupos.filter((g) => g.nombres.length)];
+---
+
+{
+  todos.length > 0 && (
+    <section class="escena kfamilia">
+      <div class="contenedor kfamilia__caja">
+        {todos.map((g) => (
+          <div class="kfamilia__grupo" data-anim="sube">
+            <p class="k-caps kfamilia__titulo">{g.titulo}</p>
+            {g.nombres.map((n) => (
+              <p class="kfamilia__nombre">{n}</p>
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .kfamilia__caja {
+    display: grid;
+    gap: 2.4rem;
+    text-align: center;
+  }
+
+  .kfamilia__titulo {
+    margin: 0 0 0.6rem;
+  }
+
+  .kfamilia__nombre {
+    margin: 0;
+    font-family: var(--k-f-titulo);
+    font-size: 1.25rem;
+    color: var(--k-texto);
+  }
+</style>

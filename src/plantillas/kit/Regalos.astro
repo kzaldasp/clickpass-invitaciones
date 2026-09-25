@@ -1,0 +1,105 @@
+---
+/** Mesa de regalos a partir de los extras comunes. Solo sale si hay algo. */
+import Titulo from './Titulo.astro';
+
+interface Props {
+  extras: Record<string, unknown>;
+  antes?: string;
+  titulo?: string;
+}
+
+const { extras, antes = 'Mesa de', titulo = 'regalos' } = Astro.props;
+const t = (k: string) => (typeof extras[k] === 'string' && (extras[k] as string).trim() ? (extras[k] as string).trim() : undefined);
+const texto = t('regalosTexto');
+const link = t('regalosLink');
+const banco = t('datosBancarios');
+const lluvia = extras.lluviaSobres === true;
+const linkValido = link && /^https?:\/\//.test(link) ? link : undefined;
+---
+
+{
+  (texto || linkValido || banco || lluvia) && (
+    <section class="escena">
+      <div class="contenedor k-centro kregalos">
+        <slot />
+        <Titulo antes={antes} titulo={titulo} />
+        {texto && <p class="k-texto-suave" data-anim="sube">{texto}</p>}
+        {linkValido && (
+          <a class="k-boton" href={linkValido} target="_blank" rel="noopener noreferrer" data-anim="sube">
+            Ver mesa de regalos
+          </a>
+        )}
+        {banco && (
+          <div class="k-tarjeta kregalos__banco" data-anim="sube">
+            <p class="k-caps">Transferencia</p>
+            <p class="kregalos__datos">{banco}</p>
+            <button type="button" class="k-boton k-boton--linea" data-k-copiar={banco}>
+              Copiar datos
+            </button>
+          </div>
+        )}
+        {lluvia && (
+          <p class="kregalos__lluvia" data-anim="sube">
+            <span class="k-deco">Lluvia de sobres</span>
+            <span>Habrá un buzón especial el día del evento.</span>
+          </p>
+        )}
+      </div>
+    </section>
+  )
+}
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-k-copiar]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.kCopiar!);
+        const antes = b.textContent;
+        b.textContent = '¡Copiado!';
+        setTimeout(() => (b.textContent = antes), 1800);
+      } catch {
+        /* Sin permiso: los datos siguen visibles. */
+      }
+    });
+  });
+</script>
+
+<style>
+  .kregalos {
+    gap: 1.1rem;
+  }
+
+  .kregalos :global(.k-titulo) {
+    margin-bottom: 0.4rem;
+  }
+
+  .kregalos__banco {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    width: min(21rem, 100%);
+    padding: 1.4rem 1.2rem;
+  }
+
+  .kregalos__banco .k-caps {
+    margin: 0;
+  }
+
+  .kregalos__datos {
+    margin: 0;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    white-space: pre-line;
+  }
+
+  .kregalos__lluvia {
+    display: grid;
+    gap: 0.2rem;
+    margin: 0.4rem 0 0;
+    color: var(--k-suave);
+  }
+
+  .kregalos__lluvia .k-deco {
+    font-size: 2rem;
+  }
+</style>

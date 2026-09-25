@@ -1,0 +1,159 @@
+---
+/**
+ * Lugares del evento. `estilo`:
+ *   tarjetas -> una tarjeta por lugar (con icono segun el titulo)
+ *   linea    -> linea de tiempo vertical; el hilo se dibuja con el scroll
+ */
+import Titulo from './Titulo.astro';
+import EtiquetaZona from '../compartidas/EtiquetaZona.astro';
+import { horaLegible } from '../../lib/fechas';
+import type { ContenidoEvento } from '../../lib/contenido';
+
+interface Props {
+  lugares: ContenidoEvento['lugares'];
+  zona: string;
+  estilo?: 'tarjetas' | 'linea';
+  antes?: string;
+  titulo?: string;
+  textoMapa?: string;
+}
+
+const { lugares, zona, estilo = 'tarjetas', antes = 'Dónde y cuándo', titulo = 'Te esperamos', textoMapa = 'Ver mapa' } = Astro.props;
+const ceremonia = (t: string) => /ceremon|misa|iglesia|civil|religios|capilla|templo/i.test(t);
+---
+
+<section class="escena">
+  <div class="contenedor">
+    <Titulo antes={antes} titulo={titulo} />
+    <ol class:list={['klugares', `klugares--${estilo}`]} data-k-linea={estilo === 'linea' ? '' : undefined}>
+      {estilo === 'linea' && <span class="klugares__hilo" aria-hidden="true" />}
+      {
+        lugares.map((l) => (
+          <li class="klugar" data-anim="sube">
+            {estilo === 'linea' ? (
+              <span class="klugar__punto" aria-hidden="true" />
+            ) : (
+              <svg class="klugar__icono" viewBox="0 0 64 64" aria-hidden="true">
+                {ceremonia(l.titulo) ? (
+                  <g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round">
+                    <path d="M32 6v8M28 10h8M20 58V30l12-12 12 12v28M12 58V38l8-6M52 58V38l-8-6M28 58V46a4 4 0 0 1 8 0v12M8 58h48" />
+                  </g>
+                ) : (
+                  <g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 26h36l-3 30H17zM10 26h44M24 26c0-8 3-14 8-14s8 6 8 14M32 34v14M26 41h12" />
+                  </g>
+                )}
+              </svg>
+            )}
+            <p class="klugar__hora">
+              {horaLegible(l.hora)} <EtiquetaZona zona={zona} class="klugar__zona" />
+            </p>
+            <p class="k-caps klugar__titulo">{l.titulo}</p>
+            <p class="klugar__nombre">{l.nombre}</p>
+            <p class="klugar__dir">{l.direccion}</p>
+            {l.mapa && (
+              <a class="k-boton k-boton--linea" href={l.mapa} target="_blank" rel="noopener noreferrer">
+                {textoMapa}
+              </a>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .klugares {
+    display: grid;
+    gap: 2.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .klugar {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .klugares--tarjetas .klugar {
+    justify-items: center;
+    padding: 2rem 1.3rem;
+    border: 1px solid var(--k-linea);
+    border-radius: var(--k-radio);
+    background: var(--k-superficie);
+    box-shadow: var(--k-sombra);
+    text-align: center;
+  }
+
+  .klugar__icono {
+    width: 3.2rem;
+    margin-bottom: 0.4rem;
+    color: var(--k-acento);
+  }
+
+  .klugar__hora {
+    margin: 0;
+    font-family: var(--k-f-titulo);
+    font-size: 1.9rem;
+    line-height: 1.1;
+    color: var(--k-acento);
+  }
+
+  .klugar__hora :global(.klugar__zona) {
+    display: block;
+    font-family: var(--k-f-cuerpo);
+    font-size: 0.75rem;
+    font-style: italic;
+    color: var(--k-suave);
+  }
+
+  .klugar__titulo {
+    margin: 0;
+  }
+
+  .klugar__nombre {
+    margin: 0.2rem 0 0;
+    font-family: var(--k-f-titulo);
+    font-size: 1.3rem;
+    color: var(--k-texto);
+  }
+
+  .klugar__dir {
+    margin: 0 0 0.7rem;
+    color: var(--k-suave);
+  }
+
+  /* Linea de tiempo */
+  .klugares--linea {
+    position: relative;
+    padding-left: 2.2rem;
+  }
+
+  .klugares__hilo {
+    position: absolute;
+    top: 0.6rem;
+    bottom: 0.6rem;
+    left: 0.45rem;
+    width: 2px;
+    background: var(--k-acento);
+    transform-origin: top;
+  }
+
+  .klugares--linea .klugar {
+    position: relative;
+    justify-items: start;
+  }
+
+  .klugar__punto {
+    position: absolute;
+    top: 0.55rem;
+    left: -2.2rem;
+    width: 1rem;
+    aspect-ratio: 1;
+    border: 2px solid var(--k-acento);
+    border-radius: 50%;
+    background: var(--k-superficie);
+  }
+</style>
