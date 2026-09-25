@@ -1,0 +1,123 @@
+---
+import Rama from '../Rama.astro';
+import Monograma from '../Monograma.astro';
+import Foto from '../Foto.astro';
+
+interface Props {
+  tipo: string;
+  nombre: string;
+  fechaNumerica: string;
+  frase?: string;
+  foto?: string;
+  hueco: boolean;
+}
+
+const { tipo, nombre, fechaNumerica, frase, foto, hueco } = Astro.props;
+// "Victoria & Hassan" o "Ana y Luis" se parten en dos lineas con un & al medio.
+const partes = nombre.split(/\s*&\s*|\s+y\s+/i);
+---
+
+<section class="escena presentacion">
+  <div class="contenedor presentacion__caja">
+    <div data-anim="escala"><Monograma nombre={nombre} /></div>
+    <p class="j-script presentacion__tipo" data-anim="sube">{tipo}</p>
+
+    <h1 class="presentacion__nombres j-caps" data-j-split>
+      {
+        partes.length === 2 ? (
+          <>
+            <span>{partes[0]}</span>
+            <span class="presentacion__y j-script">&</span>
+            <span>{partes[1]}</span>
+          </>
+        ) : (
+          <span>{nombre}</span>
+        )
+      }
+    </h1>
+
+    <p class="presentacion__fecha j-caps" data-anim="sube">{fechaNumerica}</p>
+
+    <div class="presentacion__foto" data-anim="sube">
+      <span class="presentacion__rama presentacion__rama--izq"><Rama variante={3} /></span>
+      <Foto src={foto} forma="arco" hueco={hueco} alt={`Foto de ${nombre}`} />
+      <span class="presentacion__rama presentacion__rama--der"><Rama variante={1} espejo /></span>
+    </div>
+
+    {frase && <p class="presentacion__frase" data-anim="sube">“{frase}”</p>}
+  </div>
+</section>
+
+<style>
+  .presentacion__caja {
+    display: grid;
+    justify-items: center;
+    gap: 0.6rem;
+    text-align: center;
+  }
+
+  .presentacion__tipo {
+    margin: 0.4rem 0 0;
+    font-size: clamp(2.4rem, 12vw, 3.2rem);
+    color: var(--j-salvia-osc);
+  }
+
+  .presentacion__nombres {
+    display: grid;
+    gap: 0.1rem;
+    margin: 0;
+    font-family: var(--j-f-serif);
+    font-size: clamp(1.9rem, 9.5vw, 2.7rem);
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    line-height: 1.15;
+    color: var(--j-tinta);
+  }
+
+  .presentacion__y {
+    font-size: 1.4em;
+    letter-spacing: 0;
+    line-height: 0.9;
+    color: var(--j-salvia);
+    text-transform: none;
+  }
+
+  .presentacion__fecha {
+    margin: 0.6rem 0 1.8rem;
+    font-size: 0.95rem;
+    letter-spacing: 0.4em;
+  }
+
+  .presentacion__foto {
+    position: relative;
+    width: min(18rem, 78vw);
+  }
+
+  .presentacion__rama {
+    position: absolute;
+    z-index: 2;
+    width: 9.5rem;
+  }
+
+  .presentacion__rama--izq {
+    bottom: -2.2rem;
+    left: -3.4rem;
+    transform: rotate(-12deg);
+  }
+
+  .presentacion__rama--der {
+    top: -1.6rem;
+    right: -3.6rem;
+    transform: rotate(18deg);
+  }
+
+  .presentacion__frase {
+    max-width: 20rem;
+    margin: 2.8rem 0 0;
+    font-family: var(--j-f-serif);
+    font-size: 1.3rem;
+    font-style: italic;
+    color: var(--j-suave);
+    text-wrap: balance;
+  }
+</style>

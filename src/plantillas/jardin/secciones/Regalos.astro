@@ -1,0 +1,133 @@
+---
+/**
+ * Mesa de regalos: sale solo si el evento llena alguno de sus extras
+ * (mensaje, link de tienda, datos bancarios o lluvia de sobres).
+ */
+interface Props {
+  texto?: string;
+  link?: string;
+  datosBancarios?: string;
+  lluviaSobres?: boolean;
+}
+
+const { texto, link, datosBancarios, lluviaSobres } = Astro.props;
+const hay = texto || link || datosBancarios || lluviaSobres;
+const linkValido = link && /^https?:\/\//.test(link) ? link : undefined;
+---
+
+{
+  hay && (
+    <section class="escena regalos">
+      <div class="contenedor regalos__caja">
+        <svg class="regalos__sobre" viewBox="0 0 120 84" aria-hidden="true" data-anim="escala">
+          <rect x="4" y="10" width="112" height="70" rx="3" fill="var(--j-sobre)" stroke="var(--j-salvia-osc)" stroke-width="1" />
+          <path d="M4 12l56 38 56-38" fill="color-mix(in srgb, var(--j-sobre) 85%, black)" stroke="var(--j-salvia-osc)" stroke-width="1" />
+          <circle cx="60" cy="49" r="9" fill="var(--j-sello)" />
+        </svg>
+
+        <h2 class="j-titulo" data-anim="sube">
+          <span class="j-caps">Mesa de</span>
+          <span class="j-script">regalos</span>
+        </h2>
+
+        {texto && <p class="regalos__texto" data-anim="sube">{texto}</p>}
+
+        {linkValido && (
+          <a class="j-boton" href={linkValido} target="_blank" rel="noopener noreferrer" data-anim="sube">
+            Ver mesa de regalos
+          </a>
+        )}
+
+        {datosBancarios && (
+          <div class="regalos__banco" data-anim="sube">
+            <p class="j-caps regalos__banco-titulo">Transferencia</p>
+            <p class="regalos__banco-datos">{datosBancarios}</p>
+            <button type="button" class="j-boton j-boton--linea" data-j-copiar={datosBancarios}>
+              Copiar datos
+            </button>
+          </div>
+        )}
+
+        {lluviaSobres && (
+          <p class="regalos__lluvia" data-anim="sube">
+            <span class="j-script">Lluvia de sobres</span>
+            <span>El día del evento habrá un buzón para tus sobres.</span>
+          </p>
+        )}
+      </div>
+    </section>
+  )
+}
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-j-copiar]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.jCopiar!);
+        const antes = b.textContent;
+        b.textContent = '¡Copiado!';
+        setTimeout(() => (b.textContent = antes), 1800);
+      } catch {
+        /* Sin permiso de portapapeles: los datos siguen visibles. */
+      }
+    });
+  });
+</script>
+
+<style>
+  .regalos__caja {
+    display: grid;
+    justify-items: center;
+    gap: 1.2rem;
+    text-align: center;
+  }
+
+  .regalos__sobre {
+    width: 6rem;
+  }
+
+  .regalos__texto {
+    max-width: 21rem;
+    margin: 0;
+    font-family: var(--j-f-serif);
+    font-size: 1.2rem;
+    font-style: italic;
+    color: var(--j-suave);
+  }
+
+  .regalos__banco {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    width: min(21rem, 100%);
+    padding: 1.4rem 1.2rem;
+    border: 1px solid color-mix(in srgb, var(--j-salvia) 40%, transparent);
+    background: color-mix(in srgb, var(--j-papel-2) 70%, transparent);
+  }
+
+  .regalos__banco-titulo {
+    margin: 0;
+    font-size: 0.72rem;
+  }
+
+  .regalos__banco-datos {
+    margin: 0;
+    font-family: var(--j-f-serif);
+    font-size: 1.15rem;
+    line-height: 1.5;
+    white-space: pre-line;
+    color: var(--j-tinta);
+  }
+
+  .regalos__lluvia {
+    display: grid;
+    gap: 0.2rem;
+    margin: 0.6rem 0 0;
+    color: var(--j-suave);
+  }
+
+  .regalos__lluvia .j-script {
+    font-size: 2rem;
+    color: var(--j-salvia-osc);
+  }
+</style>

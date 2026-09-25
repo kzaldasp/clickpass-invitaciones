@@ -1,4 +1,5 @@
 import { MENSAJE_RECORDATORIO, MENSAJE_WHATSAPP } from './config';
+import { instanteALocal, localAInstante } from './fechas';
 import { rellenar } from './texto';
 import type { Evento, Invitado } from '../db/schema';
 import type { ConfirmacionVista, EventoVista, InvitadoVista, Manifiesto } from '../plantillas/tipos';
@@ -56,7 +57,10 @@ export function vistaDemo(
   base?: Pick<Evento, 'slug' | 'contenido' | 'fecha' | 'zonaHoraria' | 'configConfirmacion' | 'preset'>,
   invitadoDemo = m.demo.invitado,
 ) {
-  const fecha = base?.fecha ?? new Date(Date.now() + m.demo.diasHastaEvento * 86_400_000);
+  // Demo: N dias desde hoy, a la hora del primer lugar (no a la hora actual).
+  const zonaDemo = m.demo.zonaHoraria;
+  const dia = instanteALocal(new Date(Date.now() + m.demo.diasHastaEvento * 86_400_000), zonaDemo).slice(0, 10);
+  const fecha = base?.fecha ?? localAInstante(`${dia}T${m.demo.contenido.lugares[0]?.hora ?? '17:00'}`, zonaDemo);
   const evento: EventoVista = {
     slug: base?.slug ?? `demo-${m.slug}`,
     contenido: base?.contenido ?? m.demo.contenido,

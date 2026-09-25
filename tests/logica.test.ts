@@ -14,6 +14,7 @@ import { normalizarNombre, rellenar, slugificar } from '../src/lib/texto';
 import { tokenSeguro } from '../src/lib/tokens';
 import { hashClave, verificarClave } from '../src/lib/claves';
 import { manifiesto as aracnido } from '../src/plantillas/aracnido/manifiesto';
+import { manifiesto as jardin } from '../src/plantillas/jardin/manifiesto';
 
 const form = (datos: Record<string, string>) => {
   const f = new FormData();
@@ -167,6 +168,6 @@ describe('utilidades', () => {
 
 describe('plantillas', () => {
   it('el contenido de demo de cada manifiesto es valido', () => {
-    assert.ok(contenidoEvento.safeParse(aracnido.demo.contenido).success);
+    for (const m of [aracnido, jardin]) assert.ok(contenidoEvento.safeParse(m.demo.contenido).success, m.slug);
   });
 });

@@ -1,5 +1,6 @@
 import { manifiestoDe } from './index';
 import Aracnido from './aracnido/Plantilla.astro';
+import Jardin from './jardin/Plantilla.astro';
 
 /**
  * Registro de COMPONENTES por version. Solo lo importan las rutas que dibujan
@@ -13,6 +14,7 @@ type Componente = (props: any) => any;
 
 const VERSIONES: Record<string, Record<number, Componente>> = {
   aracnido: { 1: Aracnido },
+  jardin: { 1: Jardin },
 };
 
 /** El componente para la version del evento; si ya no existe, la ultima. */

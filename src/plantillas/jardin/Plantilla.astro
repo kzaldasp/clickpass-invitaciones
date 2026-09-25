@@ -1,0 +1,379 @@
+---
+/**
+ * Jardin: boda en acuarela botanica. Guion:
+ *   sobre con lacre -> presentacion (monograma, nombres, foto en arco)
+ *   -> save the date -> historia (foto a sangre) -> cuenta regresiva
+ *   -> sedes -> dress code -> mesa de regalos -> pase con QR
+ *   -> confirmacion -> cierre.
+ *
+ * Fotos: galeria[0] arco, [1] historia, [2] cierre. Si faltan, en borrador y
+ * vista previa se ve el hueco "Aqui va su foto"; publicada, la seccion se
+ * cierra sola.
+ */
+import Invitacion from '../../layouts/Invitacion.astro';
+import Confirmacion from '../compartidas/Confirmacion.astro';
+import Portada from './secciones/Portada.astro';
+import Presentacion from './secciones/Presentacion.astro';
+import SaveTheDate from './secciones/SaveTheDate.astro';
+import Historia from './secciones/Historia.astro';
+import Cuenta from './secciones/Cuenta.astro';
+import Sedes from './secciones/Sedes.astro';
+import DressCode from './secciones/DressCode.astro';
+import Regalos from './secciones/Regalos.astro';
+import Pase from './secciones/Pase.astro';
+import Cierre from './secciones/Cierre.astro';
+import Rama from './Rama.astro';
+
+import { fechaPartes } from '../../lib/fechas';
+import { POR_DEFECTO } from '../../lib/config';
+import { manifiesto } from './manifiesto';
+import type { PropsPlantilla } from '../tipos';
+
+type Props = PropsPlantilla;
+
+const { evento, invitado, confirmacion } = Astro.props;
+const d = evento.contenido;
+const x = d.extras as Record<string, unknown>;
+const texto = (k: string) => (typeof x[k] === 'string' && (x[k] as string).trim() ? (x[k] as string) : undefined);
+
+const partes = fechaPartes(evento.fecha, evento.zonaHoraria);
+const hora24 = new Intl.DateTimeFormat(POR_DEFECTO.locale, {
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+  timeZone: evento.zonaHoraria,
+}).format(evento.fecha);
+const mesNumero = new Intl.DateTimeFormat('en-GB', { month: '2-digit', timeZone: evento.zonaHoraria }).format(evento.fecha);
+const fechaNumerica = `${partes.dia} · ${mesNumero} · ${partes.anio}`;
+
+// Huecos de foto visibles solo mientras se prepara (borrador) o en demos.
+const hueco = evento.estado === 'borrador' || confirmacion.modo === 'demo';
+const [foto1, foto2, foto3] = d.galeria;
+
+const preset = manifiesto.presets?.find((p) => p.id === evento.preset);
+const titulo = `${d.festejado.nombre} · ${d.tipo}`;
+const descripcion = invitado
+  ? `${invitado.nombre}, con mucha ilusión te invitamos a celebrar con nosotros.`
+  : (d.frase ?? `${partes.diaSemana} ${partes.dia} de ${partes.mes} de ${partes.anio}`);
+---
+
+<Invitacion
+  titulo={titulo}
+  descripcion={descripcion}
+  imagen={foto1 ?? manifiesto.portada}
+  tema="jardin"
+  colorTema={manifiesto.colorTema}
+  variables={preset?.variables}
+  borrador={evento.estado === 'borrador'}
+  musica={d.musica?.archivo}
+>
+  {/* Filtro de acuarela compartido por todas las ramas: bordes organicos. */}
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="j-acuarela" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" result="ruido" />
+      <feDisplacementMap in="SourceGraphic" in2="ruido" scale="3.5" />
+    </filter>
+  </svg>
+
+  <Portada
+    nombre={d.festejado.nombre}
+    tipo={d.tipo}
+    fechaCorta={fechaNumerica}
+    invitado={invitado?.nombre}
+  />
+
+  {/* Hojas que caen despacio detras del contenido. */}
+  <div class="j-hojas" aria-hidden="true">
+    {
+      Array.from({ length: 7 }, (_, i) => (
+        <svg class="j-hoja-cae" viewBox="0 0 34 16" data-j-hoja style={`--i:${i}`}>
+          <path d="M0,8 C7,-1 24,-3 34,8 C24,19 7,17 0,8Z" fill={i % 2 ? 'var(--j-hoja)' : 'var(--j-salvia)'} fill-opacity="0.55" />
+        </svg>
+      ))
+    }
+  </div>
+
+  <main class="jardin">
+    <Presentacion
+      tipo={d.tipo}
+      nombre={d.festejado.nombre}
+      fechaNumerica={fechaNumerica}
+      frase={d.frase}
+      foto={foto1}
+      hueco={hueco}
+    />
+
+    <SaveTheDate
+      diaSemana={partes.diaSemana}
+      dia={partes.dia}
+      mes={partes.mes}
+      anio={partes.anio}
+      hora={`${hora24} hrs`}
+      zona={evento.zonaHoraria}
+      anfitriones={d.anfitriones}
+    />
+
+    <Historia foto={foto2} texto={texto('historia')} hueco={hueco} />
+
+    <Cuenta evento={evento} />
+
+    <div class="j-divisor" aria-hidden="true"><Rama variante={3} /></div>
+
+    <Sedes lugares={d.lugares} zona={evento.zonaHoraria} />
+
+    {d.dressCode && <DressCode titulo={d.dressCode.titulo} nota={d.dressCode.nota} />}
+
+    <Regalos
+      texto={texto('regalosTexto')}
+      link={texto('regalosLink')}
+      datosBancarios={texto('datosBancarios')}
+      lluviaSobres={x.lluviaSobres === true}
+    />
+
+    <Pase invitado={invitado} linkQr={invitado ? `${Astro.url.origin}/${evento.slug}/${invitado.token}` : undefined} />
+
+    <section class="escena">
+      <div class="contenedor jardin-confirmacion" data-anim="sube">
+        <Confirmacion confirmacion={confirmacion} invitado={invitado} zonaHoraria={evento.zonaHoraria} titulo="Confirmación de asistencia" />
+      </div>
+    </section>
+
+    <Cierre nombre={d.festejado.nombre} despedida={d.despedida} hashtag={texto('hashtag')} foto={foto3} hueco={hueco} />
+  </main>
+</Invitacion>
+
+<script>
+  import { gsap, ScrollTrigger, movimientoReducido } from '../../lib/escena';
+  import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
+  import { SplitText } from 'gsap/SplitText';
+
+  gsap.registerPlugin(DrawSVGPlugin, SplitText, ScrollTrigger);
+
+  // Todo se monta al abrir el sobre: antes, el scroll esta bloqueado y
+  // ScrollTrigger mediria posiciones falsas.
+  document.addEventListener('invitacion:abierta', () => {
+    if (movimientoReducido()) return;
+    const main = document.querySelector<HTMLElement>('.jardin');
+    if (!main) return;
+
+    // Ramas: el tallo se dibuja y las hojas brotan de la base a la punta.
+    main.querySelectorAll<SVGSVGElement>('[data-rama]').forEach((rama) => {
+      gsap
+        .timeline({ scrollTrigger: { trigger: rama, start: 'top 88%', once: true } })
+        .from(rama.querySelectorAll('.rama__tallo'), { drawSVG: '0%', duration: 1.4, ease: 'power2.inOut' })
+        .from(
+          rama.querySelectorAll('.rama__hoja'),
+          { scale: 0, transformOrigin: '0% 50%', duration: 0.55, stagger: 0.05, ease: 'back.out(2.2)' },
+          '-=1',
+        );
+    });
+
+    // Nombres: letra por letra, como tinta que aparece.
+    main.querySelectorAll<HTMLElement>('[data-j-split]').forEach((el) => {
+      const partido = SplitText.create(el, { type: 'chars', aria: 'auto' });
+      gsap.from(partido.chars, {
+        opacity: 0,
+        y: 18,
+        filter: 'blur(6px)',
+        duration: 0.9,
+        stagger: 0.035,
+        ease: 'power3.out',
+        scrollTrigger: { trigger: el, start: 'top 85%', once: true },
+        onComplete: () => partido.revert(),
+      });
+    });
+
+    // Fotos: se descubren como un telon y luego flotan con parallax suave.
+    main.querySelectorAll<HTMLElement>('[data-j-foto]').forEach((marco) => {
+      const img = marco.querySelector('img');
+      gsap.fromTo(
+        marco,
+        { clipPath: 'inset(100% 0% 0% 0%)' },
+        {
+          clipPath: 'inset(0% 0% 0% 0%)',
+          duration: 1.4,
+          ease: 'power4.inOut',
+          scrollTrigger: { trigger: marco, start: 'top 85%', once: true },
+          onComplete: () => gsap.set(marco, { clearProps: 'clipPath' }),
+        },
+      );
+      if (img) {
+        gsap.fromTo(
+          img,
+          { yPercent: -12, scale: 1.08 },
+          {
+            yPercent: 0,
+            scale: 1,
+            ease: 'none',
+            scrollTrigger: { trigger: marco, start: 'top bottom', end: 'bottom top', scrub: true },
+          },
+        );
+      }
+    });
+
+    // Hojas que caen: cada una con su ritmo, balanceo y giro.
+    document.querySelectorAll<SVGElement>('[data-j-hoja]').forEach((hoja, i) => {
+      const caer = () => {
+        gsap.set(hoja, { x: gsap.utils.random(0, window.innerWidth - 30), y: -40, rotation: gsap.utils.random(0, 360), opacity: 0 });
+        gsap
+          .timeline({ onComplete: caer, delay: gsap.utils.random(0, 6) + i * 0.8 })
+          .to(hoja, { opacity: 1, duration: 1 })
+          .to(hoja, { y: window.innerHeight + 60, duration: gsap.utils.random(11, 17), ease: 'none' }, 0)
+          .to(hoja, { x: `+=${gsap.utils.random(-80, 80)}`, duration: 3, ease: 'sine.inOut', yoyo: true, repeat: 4 }, 0)
+          .to(hoja, { rotation: `+=${gsap.utils.random(180, 420)}`, duration: 15, ease: 'none' }, 0);
+      };
+      caer();
+    });
+  });
+</script>
+
+<style is:global>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Pinyon+Script&display=swap');
+
+  html[data-tema='jardin'] {
+    --j-papel: #f6f3ec;
+    --j-papel-2: #ece7dc;
+    --j-sobre: #e7e3d6;
+    --j-salvia: #8a9a78;
+    --j-salvia-osc: #56654a;
+    --j-hoja: #a9b596;
+    --j-tinta: #3a3833;
+    --j-suave: #7a766c;
+    --j-sello: #8e2b2b;
+    --j-f-serif: 'Cormorant Garamond', 'Times New Roman', serif;
+    --j-f-script: 'Pinyon Script', 'Snell Roundhand', cursive;
+
+    /* Papel: una textura de ruido casi imperceptible sobre el color. */
+    --j-fondo-papel:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .33 0 0 0 0 .28 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse at 50% 0%, #fbf9f4 0%, transparent 60%),
+      var(--j-papel);
+
+    /* Contrato del layout: fondo, texto y fuente de cuerpo. */
+    --c-fondo: var(--j-papel);
+    --c-texto: var(--j-tinta);
+    --f-cuerpo: var(--j-f-serif);
+    --f-titulo: var(--j-f-serif);
+  }
+
+  html[data-tema='jardin'] body {
+    background: var(--j-fondo-papel);
+    font-size: 1.08rem;
+  }
+
+  html[data-tema='jardin'] .j-caps {
+    font-family: var(--j-f-serif);
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--j-suave);
+  }
+
+  html[data-tema='jardin'] .j-script {
+    font-family: var(--j-f-script);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  html[data-tema='jardin'] .j-titulo {
+    display: grid;
+    justify-items: center;
+    margin-bottom: 2.4rem;
+    text-align: center;
+  }
+
+  html[data-tema='jardin'] .j-titulo .j-caps {
+    font-size: 0.85rem;
+  }
+
+  html[data-tema='jardin'] .j-titulo .j-script {
+    font-size: clamp(2.8rem, 14vw, 3.6rem);
+    line-height: 1.05;
+    color: var(--j-salvia-osc);
+  }
+
+  html[data-tema='jardin'] .j-boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.9rem;
+    padding: 0.6rem 1.8rem;
+    border: 1px solid var(--j-salvia-osc);
+    border-radius: 999px;
+    background: var(--j-salvia-osc);
+    color: var(--j-papel);
+    font-family: var(--j-f-serif);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-decoration: none;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  html[data-tema='jardin'] .j-boton--linea {
+    background: transparent;
+    color: var(--j-salvia-osc);
+  }
+
+  html[data-tema='jardin'] .j-divisor {
+    display: grid;
+    place-items: center;
+  }
+
+  html[data-tema='jardin'] .j-divisor svg {
+    width: 7rem;
+    transform: rotate(90deg);
+  }
+
+  /* Capa de hojas que caen: fija, detras del contenido, sin capturar toques. */
+  html[data-tema='jardin'] .j-hojas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  html[data-tema='jardin'] .j-hoja-cae {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1.5rem;
+    opacity: 0;
+  }
+
+  html[data-tema='jardin'] .jardin {
+    position: relative;
+    z-index: 1;
+  }
+
+  html[data-tema='jardin'] .jardin .escena {
+    padding-block: clamp(3.5rem, 11vh, 6rem);
+  }
+
+  /* <Confirmacion /> con la piel del tema. */
+  html[data-tema='jardin'] .jardin-confirmacion {
+    --conf-fondo: color-mix(in srgb, var(--j-papel) 70%, white);
+    --conf-texto: var(--j-tinta);
+    --conf-suave: var(--j-suave);
+    --conf-acento: var(--j-salvia-osc);
+    --conf-sobre-acento: var(--j-papel);
+    --conf-borde: color-mix(in srgb, var(--j-salvia) 45%, transparent);
+    --conf-radio: 0.4rem;
+    --conf-fuente-titulo: var(--j-f-script);
+  }
+
+  html[data-tema='jardin'] .jardin-confirmacion .conf__titulo {
+    font-size: clamp(2.4rem, 11vw, 3rem);
+    font-weight: 400;
+    color: var(--j-salvia-osc);
+  }
+
+  html[data-tema='jardin'] .jardin-confirmacion .conf__boton {
+    font-family: var(--j-f-serif);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+</style>

@@ -1,0 +1,121 @@
+---
+/** Ceremonia, recepcion… con icono de linea y boton de mapa. */
+import EtiquetaZona from '../../compartidas/EtiquetaZona.astro';
+import { horaLegible } from '../../../lib/fechas';
+import type { ContenidoEvento } from '../../../lib/contenido';
+
+interface Props {
+  lugares: ContenidoEvento['lugares'];
+  zona: string;
+}
+
+const { lugares, zona } = Astro.props;
+
+// Iglesia si el titulo lo sugiere; copas para todo lo demas.
+const esCeremonia = (t: string) => /ceremon|misa|iglesia|civil|religios|capilla|templo/i.test(t);
+---
+
+<section class="escena sedes">
+  <div class="contenedor">
+    <h2 class="j-titulo" data-anim="sube">
+      <span class="j-caps">Dónde y cuándo</span>
+      <span class="j-script">Sedes</span>
+    </h2>
+
+    <div class="sedes__lista">
+      {
+        lugares.map((l) => (
+          <article class="sede" data-anim="sube">
+            <svg class="sede__icono" viewBox="0 0 64 64" aria-hidden="true">
+              {esCeremonia(l.titulo) ? (
+                <g fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round">
+                  <path d="M32 6v8M28 10h8" />
+                  <path d="M20 58V30l12-12 12 12v28" />
+                  <path d="M12 58V38l8-6M52 58V38l-8-6" />
+                  <path d="M28 58V46a4 4 0 0 1 8 0v12M8 58h48" />
+                  <circle cx="32" cy="32" r="4" />
+                </g>
+              ) : (
+                <g fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+                  <path d="M18 10h12l-1 14a5 5 0 0 1-10 0z" transform="rotate(-10 24 20)" />
+                  <path d="M34 10h12l1 14a5 5 0 0 1-10 0z" transform="rotate(10 40 20)" />
+                  <path d="M23 30l-2 22M41 30l2 22M15 53h12M37 53h12" />
+                  <path d="M32 4l1 3M27 6l2 2M37 6l-2 2" />
+                </g>
+              )}
+            </svg>
+            <p class="j-caps sede__titulo">{l.titulo}</p>
+            <p class="sede__hora">
+              {horaLegible(l.hora)} <EtiquetaZona zona={zona} class="sede__zona" />
+            </p>
+            <p class="sede__nombre">{l.nombre}</p>
+            <p class="sede__direccion">{l.direccion}</p>
+            {l.mapa && (
+              <a class="j-boton j-boton--linea" href={l.mapa} target="_blank" rel="noopener noreferrer">
+                Ver mapa
+              </a>
+            )}
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .sedes__lista {
+    display: grid;
+    gap: 2.8rem;
+  }
+
+  .sede {
+    display: grid;
+    justify-items: center;
+    gap: 0.35rem;
+    text-align: center;
+  }
+
+  .sede + .sede {
+    padding-top: 2.8rem;
+    border-top: 1px solid color-mix(in srgb, var(--j-salvia) 35%, transparent);
+  }
+
+  .sede__icono {
+    width: 3.6rem;
+    margin-bottom: 0.4rem;
+    color: var(--j-salvia-osc);
+  }
+
+  .sede__titulo {
+    margin: 0;
+    font-size: 0.8rem;
+  }
+
+  .sede__hora {
+    margin: 0;
+    font-family: var(--j-f-serif);
+    font-size: 2rem;
+    color: var(--j-tinta);
+  }
+
+  .sede__hora :global(.sede__zona) {
+    display: block;
+    font-size: 0.8rem;
+    font-style: italic;
+    color: var(--j-suave);
+  }
+
+  .sede__nombre {
+    margin: 0;
+    font-family: var(--j-f-serif);
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--j-tinta);
+  }
+
+  .sede__direccion {
+    margin: 0 0 0.8rem;
+    max-width: 18rem;
+    color: var(--j-suave);
+  }
+</style>

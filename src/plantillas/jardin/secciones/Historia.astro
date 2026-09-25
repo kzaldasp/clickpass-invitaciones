@@ -1,0 +1,63 @@
+---
+/** Foto a sangre con parallax y una frase de la pareja encima. */
+import Foto from '../Foto.astro';
+
+interface Props {
+  foto?: string;
+  texto?: string;
+  hueco: boolean;
+}
+
+const { foto, texto, hueco } = Astro.props;
+const mostrar = foto || hueco;
+---
+
+{
+  mostrar && (
+    <section class="historia">
+      <div class="historia__foto">
+        <Foto src={foto} forma="rect" hueco={hueco} alt="" />
+      </div>
+      {texto && (
+        <div class="historia__texto contenedor">
+          <p class="j-script historia__antes" data-anim="sube">Nuestra historia</p>
+          <p class="historia__frase" data-anim="sube">{texto}</p>
+        </div>
+      )}
+    </section>
+  )
+}
+
+<style>
+  .historia {
+    display: grid;
+    gap: 2rem;
+    padding-block: 2rem 4rem;
+  }
+
+  .historia__foto {
+    width: min(100%, 34rem);
+    margin-inline: auto;
+  }
+
+  .historia__texto {
+    text-align: center;
+  }
+
+  .historia__antes {
+    margin: 0;
+    font-size: 2.4rem;
+    color: var(--j-salvia-osc);
+  }
+
+  .historia__frase {
+    margin: 0.4rem auto 0;
+    max-width: 22rem;
+    font-family: var(--j-f-serif);
+    font-size: 1.3rem;
+    font-style: italic;
+    line-height: 1.45;
+    color: var(--j-tinta);
+    text-wrap: balance;
+  }
+</style>

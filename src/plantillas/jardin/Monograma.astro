@@ -1,0 +1,90 @@
+---
+/**
+ * Monograma con las iniciales de la pareja: "Victoria & Hassan" -> V & H.
+ * `sello` lo pinta como lacre (para el sobre); si no, es una linea fina.
+ */
+interface Props {
+  nombre: string;
+  sello?: boolean;
+  class?: string;
+}
+
+const { nombre, sello = false, class: clase } = Astro.props;
+
+const partes = nombre
+  .split(/\s*(?:&|\by\b|\be\b|\+)\s*/i)
+  .map((p) => p.trim())
+  .filter(Boolean);
+const iniciales = (partes.length > 1 ? partes.slice(0, 2) : [nombre]).map((p) => p.charAt(0).toUpperCase());
+---
+
+<div class:list={['monograma', { 'monograma--sello': sello }, clase]} aria-hidden="true">
+  <svg viewBox="0 0 120 120" class="monograma__aro">
+    <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="1.2" />
+    <circle cx="60" cy="60" r="49" fill="none" stroke="currentColor" stroke-width="0.5" stroke-dasharray="1.5 3" />
+  </svg>
+  <span class="monograma__letras">
+    {iniciales[0]}
+    {iniciales[1] && <span class="monograma__y">&</span>}
+    {iniciales[1]}
+  </span>
+</div>
+
+<style>
+  .monograma {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: var(--monograma, 5.5rem);
+    aspect-ratio: 1;
+    color: var(--j-sello);
+  }
+
+  .monograma__aro {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .monograma__letras {
+    display: flex;
+    align-items: baseline;
+    gap: 0.05em;
+    font-family: var(--j-f-script);
+    font-size: calc(var(--monograma, 5.5rem) * 0.36);
+    line-height: 1;
+    transform: translateY(0.08em);
+  }
+
+  .monograma__y {
+    font-size: 0.55em;
+    font-family: var(--j-f-serif);
+    font-style: italic;
+  }
+
+  /* Lacre: relieve con degradado y borde irregular. */
+  .monograma--sello {
+    border-radius: 47% 53% 50% 50% / 52% 48% 52% 48%;
+    background:
+      radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.28), transparent 45%),
+      radial-gradient(circle at 70% 75%, rgb(0 0 0 / 0.25), transparent 50%),
+      var(--j-sello);
+    box-shadow:
+      0 3px 0 color-mix(in srgb, var(--j-sello) 70%, black),
+      0 10px 22px rgb(0 0 0 / 0.25),
+      inset 0 0 0 3px color-mix(in srgb, var(--j-sello) 80%, white);
+    color: rgb(255 255 255 / 0.9);
+  }
+
+  .monograma--sello .monograma__aro {
+    inset: 10%;
+    width: 80%;
+    height: 80%;
+  }
+
+  .monograma--sello .monograma__letras {
+    font-size: calc(var(--monograma, 5.5rem) * 0.3);
+    text-shadow: 0 1px 0 rgb(0 0 0 / 0.3);
+  }
+</style>

@@ -1,0 +1,140 @@
+---
+/** "La cuenta regresiva ha comenzado" — al instante exacto (UTC) del evento. */
+import AgregarCalendario from '../../compartidas/AgregarCalendario.astro';
+import type { EventoVista } from '../../tipos';
+
+interface Props {
+  evento: EventoVista;
+}
+
+const { evento } = Astro.props;
+const unidades = [
+  ['dias', 'Días'],
+  ['horas', 'Horas'],
+  ['minutos', 'Minutos'],
+  ['segundos', 'Segundos'],
+] as const;
+---
+
+<section class="escena cuenta">
+  <div class="contenedor cuenta__caja">
+    <h2 class="cuenta__titulo" data-anim="sube">
+      <span class="j-caps">La cuenta regresiva</span>
+      <span class="j-script">ha comenzado</span>
+    </h2>
+
+    <div class="cuenta__reloj" data-j-cuenta={evento.fecha.toISOString()} data-anim="escala">
+      {
+        unidades.map(([clave, etiqueta], i) => (
+          <>
+            {i > 0 && <span class="cuenta__sep" aria-hidden="true">:</span>}
+            <div class="cuenta__unidad">
+              <span class="cuenta__numero" data-unidad={clave}>--</span>
+              <span class="j-caps cuenta__etiqueta">{etiqueta}</span>
+            </div>
+          </>
+        ))
+      }
+    </div>
+    <p class="j-script cuenta__hoy" data-j-hoy hidden>¡Hoy es el gran día!</p>
+
+    <div class="cuenta__calendario" data-anim="sube">
+      <AgregarCalendario evento={evento} />
+    </div>
+  </div>
+</section>
+
+<script>
+  const reloj = document.querySelector<HTMLElement>('[data-j-cuenta]');
+  if (reloj) {
+    const objetivo = new Date(reloj.dataset.jCuenta!).getTime();
+    const campo = (k: string) => reloj.querySelector<HTMLElement>(`[data-unidad="${k}"]`)!;
+    const campos = { dias: campo('dias'), horas: campo('horas'), minutos: campo('minutos'), segundos: campo('segundos') };
+    const pintar = (el: HTMLElement, v: number, largo = 2) => {
+      const t = String(v).padStart(largo, '0');
+      if (el.textContent !== t) el.textContent = t;
+    };
+    const tic = () => {
+      const resta = objetivo - Date.now();
+      if (resta <= 0) {
+        reloj.hidden = true;
+        document.querySelector<HTMLElement>('[data-j-hoy]')!.hidden = false;
+        return;
+      }
+      const s = Math.floor(resta / 1000);
+      pintar(campos.dias, Math.floor(s / 86400));
+      pintar(campos.horas, Math.floor((s % 86400) / 3600));
+      pintar(campos.minutos, Math.floor((s % 3600) / 60));
+      pintar(campos.segundos, s % 60);
+      setTimeout(tic, 1000 - (Date.now() % 1000));
+    };
+    tic();
+  }
+</script>
+
+<style>
+  .cuenta__caja {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .cuenta__titulo {
+    display: grid;
+    margin-bottom: 2rem;
+  }
+
+  .cuenta__titulo .j-caps {
+    font-size: 0.85rem;
+  }
+
+  .cuenta__titulo .j-script {
+    font-size: clamp(2.6rem, 13vw, 3.4rem);
+    line-height: 1.1;
+    color: var(--j-salvia-osc);
+  }
+
+  .cuenta__reloj {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+
+  .cuenta__unidad {
+    display: grid;
+    justify-items: center;
+    min-width: 3.6rem;
+  }
+
+  .cuenta__numero {
+    font-family: var(--j-f-serif);
+    font-size: clamp(2.4rem, 12vw, 3.2rem);
+    font-weight: 500;
+    line-height: 1;
+    color: var(--j-tinta);
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  .cuenta__sep {
+    font-family: var(--j-f-serif);
+    font-size: 2.2rem;
+    line-height: 1.1;
+    color: var(--j-salvia);
+  }
+
+  .cuenta__etiqueta {
+    margin-top: 0.4rem;
+    font-size: 0.55rem;
+  }
+
+  .cuenta__hoy {
+    font-size: 2.6rem;
+    color: var(--j-salvia-osc);
+  }
+
+  .cuenta__calendario {
+    margin-top: 2.2rem;
+    color: var(--j-salvia-osc);
+  }
+</style>

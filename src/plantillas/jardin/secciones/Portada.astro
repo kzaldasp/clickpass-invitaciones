@@ -1,0 +1,263 @@
+---
+/**
+ * La portada es un sobre cerrado con sello de lacre. Todo el sobre es el boton
+ * (data-gate-abrir): al tocarlo, la solapa gira, la carta sube y el sobre se
+ * desvanece. Solo se usan @keyframes en los hijos: el layout espera el
+ * `transitionend` de la portada, y una transition en un hijo lo dispararia antes.
+ */
+import Rama from '../Rama.astro';
+import Monograma from '../Monograma.astro';
+
+interface Props {
+  nombre: string;
+  tipo: string;
+  fechaCorta: string;
+  invitado?: string;
+}
+
+const { nombre, tipo, fechaCorta, invitado } = Astro.props;
+---
+
+<div class="portada" data-gate-portada>
+  <span class="portada__rama portada__rama--izq"><Rama variante={1} /></span>
+  <span class="portada__rama portada__rama--der"><Rama variante={2} espejo /></span>
+
+  <div class="portada__centro">
+    <p class="portada__antes j-caps" data-j-entra>{invitado ? 'Una invitación para' : 'Estás invitado a'}</p>
+    <p class="portada__para j-script" data-j-entra>{invitado ?? tipo}</p>
+
+    <button class="sobre" type="button" data-gate-abrir aria-label="Abrir invitación" data-j-entra>
+      <span class="sobre__carta" aria-hidden="true">
+        <span class="j-caps sobre__carta-tipo">{tipo}</span>
+        <span class="j-script sobre__carta-nombre">{nombre}</span>
+        <span class="j-caps sobre__carta-fecha">{fechaCorta}</span>
+      </span>
+      <span class="sobre__cuerpo" aria-hidden="true"></span>
+      <span class="sobre__solapa" aria-hidden="true"></span>
+      <span class="sobre__sello" aria-hidden="true">
+        <Monograma nombre={nombre} sello />
+      </span>
+    </button>
+
+    <p class="portada__accion j-caps" data-j-entra>Toca el sello para abrir</p>
+    <p class="portada__nota" data-j-entra>Activa el sonido para vivirla completa</p>
+  </div>
+</div>
+
+<script>
+  import { gsap, movimientoReducido } from '../../../lib/escena';
+  import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
+
+  gsap.registerPlugin(DrawSVGPlugin);
+
+  const portada = document.querySelector<HTMLElement>('[data-gate-portada]');
+  if (portada && !movimientoReducido()) {
+    gsap
+      .timeline({ defaults: { ease: 'power3.out' } })
+      .from(portada.querySelectorAll('.rama__tallo'), { drawSVG: '0%', duration: 1.6, ease: 'power2.inOut' })
+      .from(
+        portada.querySelectorAll('.rama__hoja'),
+        { scale: 0, transformOrigin: '0% 50%', duration: 0.6, stagger: 0.035, ease: 'back.out(2)' },
+        '-=1.2',
+      )
+      .from(portada.querySelectorAll('[data-j-entra]'), { opacity: 0, y: 24, duration: 0.9, stagger: 0.12 }, '-=1.1');
+
+    // El sello late suave hasta que lo tocan: invita al gesto.
+    gsap.to(portada.querySelector('.sobre__sello'), {
+      scale: 1.06,
+      duration: 1.1,
+      repeat: -1,
+      yoyo: true,
+      ease: 'sine.inOut',
+      delay: 2,
+    });
+  }
+</script>
+
+<style>
+  .portada {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 2rem 1.25rem;
+    overflow: hidden;
+    background: var(--j-fondo-papel);
+    opacity: 1;
+  }
+
+  .portada[data-saliendo='true'] {
+    opacity: 0;
+    pointer-events: none;
+    /* Espera a que el sobre termine de abrirse antes de desvanecerse. */
+    transition: opacity 0.9s ease 1.7s;
+  }
+
+  .portada__rama {
+    position: absolute;
+    width: min(58vw, 17rem);
+    pointer-events: none;
+  }
+
+  .portada__rama--izq {
+    top: -2.5rem;
+    left: -3rem;
+    transform: rotate(-8deg);
+  }
+
+  .portada__rama--der {
+    right: -3rem;
+    bottom: -2rem;
+  }
+
+  .portada__centro {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    justify-items: center;
+    gap: 0.4rem;
+    width: min(21rem, 100%);
+    text-align: center;
+  }
+
+  .portada__antes {
+    font-size: 0.72rem;
+  }
+
+  .portada__para {
+    margin-bottom: 1.6rem;
+    font-size: clamp(2.2rem, 11vw, 3rem);
+    line-height: 1.1;
+    color: var(--j-salvia-osc);
+  }
+
+  /* --- Sobre ----------------------------------------------------------- */
+  .sobre {
+    --alto: min(13.5rem, 62vw);
+    position: relative;
+    width: 100%;
+    height: var(--alto);
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    perspective: 900px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .sobre__cuerpo {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: 4px;
+    background:
+      linear-gradient(to top right, transparent 49.6%, rgb(0 0 0 / 0.06) 50%, transparent 50.4%),
+      linear-gradient(to top left, transparent 49.6%, rgb(0 0 0 / 0.06) 50%, transparent 50.4%),
+      var(--j-sobre);
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.6) inset,
+      0 18px 40px -12px rgb(60 60 40 / 0.35);
+  }
+
+  .sobre__solapa {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 4;
+    height: 58%;
+    background: color-mix(in srgb, var(--j-sobre) 88%, black);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    transform-origin: top center;
+    filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.1));
+  }
+
+  .sobre__sello {
+    --monograma: 4.6rem;
+    position: absolute;
+    top: 58%;
+    left: 50%;
+    z-index: 5;
+    translate: -50% -50%;
+  }
+
+  .sobre__carta {
+    position: absolute;
+    inset: 0.6rem 0.9rem;
+    z-index: 1;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.35rem;
+    border-radius: 2px;
+    background: var(--j-papel);
+    box-shadow: 0 2px 10px rgb(0 0 0 / 0.08);
+  }
+
+  .sobre__carta-tipo,
+  .sobre__carta-fecha {
+    font-size: 0.62rem;
+  }
+
+  .sobre__carta-nombre {
+    font-size: 1.9rem;
+    line-height: 1.1;
+    color: var(--j-tinta);
+  }
+
+  .portada__accion {
+    margin-top: 1.6rem;
+    font-size: 0.7rem;
+    color: var(--j-salvia-osc);
+  }
+
+  .portada__nota {
+    margin: 0;
+    font-size: 0.78rem;
+    font-style: italic;
+    color: var(--j-suave);
+  }
+
+  /* --- Apertura -------------------------------------------------------- */
+  .portada[data-saliendo='true'] .sobre__sello {
+    animation: sello-sale 0.5s ease-in forwards;
+  }
+
+  .portada[data-saliendo='true'] .sobre__solapa {
+    animation: solapa-abre 0.8s cubic-bezier(0.6, 0, 0.3, 1) 0.25s forwards;
+  }
+
+  .portada[data-saliendo='true'] .sobre__carta {
+    animation: carta-sube 1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.8s forwards;
+  }
+
+  @keyframes sello-sale {
+    to {
+      opacity: 0;
+      scale: 1.35;
+    }
+  }
+
+  @keyframes solapa-abre {
+    0% {
+      transform: rotateX(0deg);
+      z-index: 4;
+    }
+    50% {
+      z-index: 4;
+    }
+    51% {
+      z-index: 0;
+    }
+    100% {
+      transform: rotateX(180deg);
+      z-index: 0;
+    }
+  }
+
+  @keyframes carta-sube {
+    to {
+      z-index: 3;
+      transform: translateY(-58%) scale(1.04);
+    }
+  }
+</style>

@@ -1,0 +1,65 @@
+---
+/** Codigo de vestimenta con ilustracion de linea (traje y vestido). */
+interface Props {
+  titulo: string;
+  nota?: string;
+}
+
+const { titulo, nota } = Astro.props;
+---
+
+<section class="escena dress">
+  <div class="contenedor dress__caja">
+    <p class="j-caps dress__antes" data-anim="sube">Código de vestimenta</p>
+    <h2 class="j-script dress__titulo" data-anim="sube">{titulo}</h2>
+
+    <svg class="dress__figura" viewBox="0 0 160 150" aria-hidden="true" data-anim="escala">
+      <g fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="52" cy="18" r="9" />
+        <path d="M40 34l12 8 12-8M40 34l-8 44h8l4 64M64 34l8 44h-8l-4 64M52 42v34M48 50l4 4 4-4" />
+        <path d="M40 34c-6 2-10 8-12 18l-4 24M64 34c6 2 10 8 12 18l4 24" />
+        <circle cx="110" cy="18" r="9" />
+        <path d="M104 30c-4 6-4 14 0 20l-18 90h48l-18-90c4-6 4-14 0-20" />
+        <path d="M100 34c-8 4-12 14-12 26M120 34c8 4 12 14 12 26" />
+        <path d="M96 90c8 4 20 4 28 0" />
+      </g>
+    </svg>
+
+    {nota && <p class="dress__nota" data-anim="sube">{nota}</p>}
+  </div>
+</section>
+
+<style>
+  .dress__caja {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .dress__antes {
+    margin: 0;
+    font-size: 0.8rem;
+  }
+
+  .dress__titulo {
+    margin: 0.2rem 0 1.4rem;
+    font-size: clamp(3rem, 15vw, 4rem);
+    font-weight: 400;
+    color: var(--j-salvia-osc);
+  }
+
+  .dress__figura {
+    width: 9.5rem;
+    color: var(--j-tinta);
+    opacity: 0.8;
+  }
+
+  .dress__nota {
+    margin: 1.6rem 0 0;
+    max-width: 19rem;
+    font-family: var(--j-f-serif);
+    font-size: 1.2rem;
+    font-style: italic;
+    color: var(--j-suave);
+  }
+</style>

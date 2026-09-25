@@ -187,6 +187,18 @@ invitado está en otra zona).
 **Sumar una plantilla:** crear la carpeta, una línea en `index.ts` y otra en
 `componentes.ts`.
 
+### Plantillas disponibles
+
+| Plantilla | Para | Qué la hace especial |
+|---|---|---|
+| `jardin` | Boda, aniversario | Acuarela botánica: sobre con lacre que se abre en 3D, ramas que se dibujan, hojas que caen, fotos con telón y parallax, save the date, mesa de regalos (extras: link, datos bancarios, lluvia de sobres, hashtag, historia). Paletas salvia, terracota y azul polvo. |
+| `aracnido` | Fiesta infantil, cumpleaños | Héroe que baja por su telaraña con el scroll. |
+
+En `jardin`, `galeria[0]` va en el arco de la presentación, `[1]` en "Nuestra
+historia" y `[2]` en el cierre. Si faltan, en borrador y vista previa se ve el
+hueco "Aquí va su foto"; publicada, la sección se oculta. Las fotos de la demo
+son de Unsplash (ver `public/demo/jardin/CREDITOS.md`).
+
 ### Reutilizar, personalizar y versionar
 
 - **Paleta distinta** del mismo diseño: un `preset` en el manifiesto. El admin

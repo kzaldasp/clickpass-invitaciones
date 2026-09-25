@@ -1,0 +1,107 @@
+---
+/** "Hemos reservado N lugares en tu honor" + el QR de entrada. */
+import QrEntrada from '../../compartidas/QrEntrada.astro';
+import type { InvitadoVista } from '../../tipos';
+
+interface Props {
+  invitado?: InvitadoVista;
+  linkQr?: string;
+}
+
+const { invitado, linkQr } = Astro.props;
+---
+
+{
+  invitado && (
+    <section class="escena pase">
+      <div class="contenedor">
+        <div class="pase__tarjeta" data-anim="escala">
+          <p class="j-caps pase__para">Con cariño para</p>
+          <p class="j-script pase__nombre">{invitado.nombre}</p>
+          <p class="pase__texto">
+            Hemos reservado
+            <strong class="pase__numero">{invitado.pases}</strong>
+            {invitado.pases === 1 ? 'lugar' : 'lugares'} en tu honor
+          </p>
+          {invitado.nota && <p class="pase__nota">{invitado.nota}</p>}
+          {linkQr && (
+            <div class="pase__qr">
+              <QrEntrada link={linkQr} />
+              <p class="j-caps pase__qr-texto">Presenta este código en la entrada</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .pase__tarjeta {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.4rem;
+    padding: 2.4rem 1.5rem 2rem;
+    background: var(--j-papel);
+    box-shadow: 0 20px 50px -24px rgb(60 60 40 / 0.4);
+    text-align: center;
+  }
+
+  /* Doble filete, como una tarjeta impresa. */
+  .pase__tarjeta::before {
+    content: '';
+    position: absolute;
+    inset: 0.6rem;
+    border: 1px solid color-mix(in srgb, var(--j-salvia) 55%, transparent);
+    outline: 1px solid color-mix(in srgb, var(--j-salvia) 25%, transparent);
+    outline-offset: 3px;
+    pointer-events: none;
+  }
+
+  .pase__para {
+    margin: 0;
+    font-size: 0.7rem;
+  }
+
+  .pase__nombre {
+    margin: 0;
+    font-size: clamp(2.4rem, 12vw, 3rem);
+    line-height: 1.15;
+    color: var(--j-salvia-osc);
+  }
+
+  .pase__texto {
+    margin: 0.4rem 0 0;
+    font-family: var(--j-f-serif);
+    font-size: 1.2rem;
+    color: var(--j-tinta);
+  }
+
+  .pase__numero {
+    display: block;
+    font-size: 3.4rem;
+    font-weight: 500;
+    line-height: 1.1;
+    font-variant-numeric: lining-nums;
+  }
+
+  .pase__nota {
+    margin: 0.4rem 0 0;
+    font-style: italic;
+    color: var(--j-suave);
+  }
+
+  .pase__qr {
+    --qr-tamano: 8.5rem;
+    display: grid;
+    justify-items: center;
+    gap: 0.6rem;
+    margin-top: 1.4rem;
+  }
+
+  .pase__qr-texto {
+    margin: 0;
+    font-size: 0.6rem;
+  }
+</style>

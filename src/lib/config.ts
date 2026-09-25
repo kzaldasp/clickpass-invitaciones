@@ -59,6 +59,7 @@ export const SLUGS_RESERVADOS = [
   'entrar',
   'salir',
   'aviso',
+  'demo',
   'medios',
   'ilustraciones',
   'audio',

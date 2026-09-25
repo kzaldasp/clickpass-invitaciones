@@ -1,0 +1,146 @@
+---
+/**
+ * Save the date con el bloque de fecha clasico:
+ *            DICIEMBRE
+ *   MARTES  |   15   |  17:00 HRS
+ *              2026
+ */
+import EtiquetaZona from '../../compartidas/EtiquetaZona.astro';
+
+interface Props {
+  diaSemana: string;
+  dia: string;
+  mes: string;
+  anio: string;
+  hora: string;
+  zona: string;
+  anfitriones?: { titulo: string; nombres: string[] };
+}
+
+const { diaSemana, dia, mes, anio, hora, zona, anfitriones } = Astro.props;
+---
+
+<section class="escena save">
+  <div class="contenedor save__caja">
+    <h2 class="save__titulo" data-anim="sube">
+      <span class="j-caps save__save">Save</span>
+      <span class="j-script save__the">the date</span>
+    </h2>
+
+    <div class="fecha" data-anim="escala">
+      <p class="j-caps fecha__mes">{mes}</p>
+      <div class="fecha__fila">
+        <span class="j-caps fecha__lado">{diaSemana}</span>
+        <span class="fecha__dia">{dia}</span>
+        <span class="j-caps fecha__lado">{hora}</span>
+      </div>
+      <p class="j-caps fecha__anio">{anio}</p>
+      <p class="fecha__zona"><EtiquetaZona zona={zona} /></p>
+    </div>
+
+    {
+      anfitriones && (
+        <div class="save__padres" data-anim-grupo>
+          <p class="j-caps save__padres-titulo">{anfitriones.titulo}</p>
+          {anfitriones.nombres.map((n) => (
+            <p class="save__padre">{n}</p>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .save__caja {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .save__titulo {
+    display: grid;
+    margin-bottom: 2.2rem;
+    line-height: 0.85;
+  }
+
+  .save__save {
+    font-family: var(--j-f-serif);
+    font-size: clamp(3rem, 16vw, 4.4rem);
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    color: var(--j-tinta);
+  }
+
+  .save__the {
+    margin-top: -0.2em;
+    font-size: clamp(2.8rem, 14vw, 3.8rem);
+    color: var(--j-salvia-osc);
+  }
+
+  .fecha {
+    display: grid;
+    justify-items: center;
+    gap: 0.3rem;
+  }
+
+  .fecha__mes,
+  .fecha__anio {
+    margin: 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.35em;
+  }
+
+  .fecha__fila {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 1rem;
+    width: min(20rem, 88vw);
+  }
+
+  .fecha__lado {
+    padding-block: 0.45rem;
+    border-block: 1px solid color-mix(in srgb, var(--j-salvia-osc) 55%, transparent);
+    font-size: 0.72rem;
+  }
+
+  .fecha__dia {
+    font-family: var(--j-f-serif);
+    font-size: 4.2rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--j-tinta);
+    font-variant-numeric: lining-nums;
+  }
+
+  .fecha__zona {
+    margin: 0.3rem 0 0;
+    font-size: 0.78rem;
+    font-style: italic;
+    color: var(--j-suave);
+  }
+
+  .save__padres {
+    display: grid;
+    gap: 0.25rem;
+    margin-top: 3rem;
+  }
+
+  .save__padres-titulo {
+    margin: 0 0 0.6rem;
+    font-size: 0.72rem;
+  }
+
+  .save__padre {
+    margin: 0;
+    font-family: var(--j-f-serif);
+    font-size: 1.25rem;
+    color: var(--j-tinta);
+  }
+
+  :global(.js) .save__padres > * {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+</style>

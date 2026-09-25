@@ -1,0 +1,91 @@
+---
+import Rama from '../Rama.astro';
+import Monograma from '../Monograma.astro';
+import Foto from '../Foto.astro';
+
+interface Props {
+  nombre: string;
+  despedida?: string;
+  hashtag?: string;
+  foto?: string;
+  hueco: boolean;
+}
+
+const { nombre, despedida, hashtag, foto, hueco } = Astro.props;
+---
+
+<section class="escena cierre">
+  <div class="contenedor cierre__caja">
+    <div class="cierre__foto" data-anim="sube">
+      <Foto src={foto} forma="ovalo" hueco={hueco} alt="" />
+    </div>
+
+    {despedida && <p class="j-script cierre__despedida" data-anim="sube">{despedida}</p>}
+
+    {
+      hashtag && (
+        <p class="cierre__hashtag" data-anim="sube">
+          <span class="j-caps">Comparte tus fotos</span>
+          <strong>#{hashtag.replace(/^#/, '')}</strong>
+        </p>
+      )
+    }
+
+    <div class="cierre__firma" data-anim="escala">
+      <span class="cierre__rama"><Rama variante={3} /></span>
+      <Monograma nombre={nombre} />
+      <span class="cierre__rama"><Rama variante={3} espejo /></span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cierre__caja {
+    display: grid;
+    justify-items: center;
+    gap: 1.6rem;
+    padding-bottom: 3rem;
+    text-align: center;
+  }
+
+  .cierre__foto {
+    width: min(17rem, 72vw);
+  }
+
+  .cierre__despedida {
+    max-width: 20rem;
+    margin: 0;
+    font-size: clamp(2.2rem, 10vw, 2.8rem);
+    line-height: 1.15;
+    color: var(--j-salvia-osc);
+  }
+
+  .cierre__hashtag {
+    display: grid;
+    gap: 0.3rem;
+    margin: 0;
+  }
+
+  .cierre__hashtag .j-caps {
+    font-size: 0.7rem;
+  }
+
+  .cierre__hashtag strong {
+    font-family: var(--j-f-serif);
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: var(--j-tinta);
+  }
+
+  .cierre__firma {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .cierre__rama {
+    display: block;
+    width: 5.5rem;
+  }
+</style>
