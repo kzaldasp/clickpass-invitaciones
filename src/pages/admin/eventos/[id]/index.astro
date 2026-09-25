@@ -1,0 +1,377 @@
+---
+import Admin from '../../../../layouts/Admin.astro';
+import Dialogo from '../../../../components/Dialogo.astro';
+import Estado from '../../../../components/Estado.astro';
+import Icono from '../../../../components/Icono.astro';
+import { estadisticasDe, eventoPorId, pagosDe, usuarioPorId } from '../../../../db/consultas';
+import {
+  cambiarEstado,
+  eliminarEvento,
+  finalizarEvento,
+  regenerarPanel,
+} from '../../../../lib/acciones/eventos';
+import { borrarPago, registrarPago } from '../../../../lib/acciones/pagos';
+import { ponerAviso } from '../../../../lib/aviso';
+import { etiquetaZona, fechaCorta, fechaLarga, fechaPartes } from '../../../../lib/fechas';
+import { texto } from '../../../../lib/formularios';
+import { dinero, rellenar } from '../../../../lib/texto';
+import { telefonoLegible } from '../../../../lib/telefonos';
+import { fechaLimite } from '../../../../lib/vistas';
+import { manifiestoDe } from '../../../../plantillas';
+
+const e = await eventoPorId(Astro.params.id!);
+if (!e) return Astro.rewrite('/404');
+const aqui = `/admin/eventos/${e.id}`;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const accion = texto(form, '_accion', 40);
+  const aviso = (t: string, tipo: 'exito' | 'error' | 'info' = 'exito') => ponerAviso(Astro.cookies, t, tipo);
+
+  if (accion === 'publicar') {
+    await cambiarEstado(e, 'publicado');
+    aviso('Publicado: los links de los invitados ya funcionan.');
+  } else if (accion === 'despublicar') {
+    await cambiarEstado(e, 'borrador');
+    aviso('Volvió a borrador: los links de invitado muestran "en preparación".', 'info');
+  } else if (accion === 'finalizar') {
+    const n = await finalizarEvento(e);
+    aviso(`Evento finalizado. Se borraron ${n} invitados y sus confirmaciones.`);
+  } else if (accion === 'regenerar_panel') {
+    await regenerarPanel(e);
+    aviso('Nuevo link de panel generado. El anterior ya no funciona.', 'info');
+  } else if (accion === 'registrar_pago') {
+    const error = await registrarPago(e, form, Astro.locals.usuario!.id);
+    aviso(error ?? 'Pago registrado.', error ? 'error' : 'exito');
+  } else if (accion === 'borrar_pago') {
+    await borrarPago(e, texto(form, 'id', 64));
+    aviso('Pago eliminado.', 'info');
+  } else if (accion === 'eliminar') {
+    if (texto(form, 'confirmacion', 80) !== e.slug) {
+      aviso('Para eliminar escribe el link del evento tal cual.', 'error');
+    } else {
+      await eliminarEvento(e);
+      aviso(`Evento /${e.slug} eliminado.`, 'info');
+      return Astro.redirect('/admin');
+    }
+  }
+  return Astro.redirect(aqui);
+}
+
+const [stats, listaPagos, cliente] = await Promise.all([estadisticasDe(e.id), pagosDe(e.id), usuarioPorId(e.clienteId)]);
+const m = manifiestoDe(e.plantilla);
+const preset = m?.presets?.find((p) => p.id === e.preset);
+const pagado = listaPagos.reduce((s, p) => s + p.monto, 0);
+const saldo = e.precio - pagado;
+
+const origen = Astro.url.origin;
+const linkGeneral = `${origen}/${e.slug}`;
+const linkPanel = `${origen}/panel/${e.tokenPanel}`;
+const mensajeCliente = rellenar(
+  '¡Hola {nombre}! Este es el panel de tu invitación. Ahí puedes revisar los textos, subir tu lista de invitados y ver quién confirma: {link}',
+  { nombre: cliente?.nombre.split(' ')[0] ?? '', link: linkPanel },
+);
+const waCliente = cliente?.telefono ? `https://wa.me/${cliente.telefono}?text=${encodeURIComponent(mensajeCliente)}` : null;
+
+const hoy = new Date().toISOString().slice(0, 10);
+const zona = etiquetaZona(e.zonaHoraria);
+const porcentaje = (n: number, d: number) => (d ? Math.round((n / d) * 100) : 0);
+---
+
+<Admin titulo={e.contenido.festejado.nombre}>
+  <header class="cabecera">
+    <div class="cabecera__texto">
+      <nav class="migas"><a href="/admin">Eventos</a> / <span>{e.contenido.festejado.nombre}</span></nav>
+      <div class="acciones" style="gap:.75rem">
+        <h1>{e.contenido.festejado.nombre}</h1>
+        <Estado estado={e.estado} />
+      </div>
+      <p class="suave">
+        {e.contenido.tipo} · {fechaLarga(e.fecha, e.zonaHoraria)}, {fechaPartes(e.fecha, e.zonaHoraria).hora} ({zona})
+      </p>
+    </div>
+    <div class="acciones">
+      <a class="btn" href={`/${e.slug}`} target="_blank" rel="noopener"><Icono nombre="ojo" /> Ver</a>
+      <a class="btn" href={`/panel/${e.tokenPanel}/invitacion`}><Icono nombre="editar" /> Editar textos</a>
+      <a class="btn" href={`${aqui}/editar`}><Icono nombre="paleta" /> Configurar</a>
+      {
+        e.estado === 'borrador' && (
+          <button class="btn btn--primario" data-abrir="dlg-publicar">
+            <Icono nombre="check" /> Publicar
+          </button>
+        )
+      }
+    </div>
+  </header>
+
+  {
+    e.estado === 'borrador' && (
+      <p class="alerta alerta--aviso" style="margin-bottom:1.5rem">
+        En borrador: el cliente ya puede editar y ver la vista previa, pero los links de sus invitados aún no abren.
+        Publica cuando el pago esté listo.
+      </p>
+    )
+  }
+  {
+    e.estado === 'finalizado' && (
+      <p class="alerta" style="margin-bottom:1.5rem">
+        Finalizado el {e.finalizadoEn ? fechaCorta(e.finalizadoEn, e.zonaHoraria) : '—'}. Los invitados se borraron; el
+        link general sigue vivo como recuerdo.
+      </p>
+    )
+  }
+
+  <div class="dos-columnas">
+    <div class="pila pila--lg">
+      <div class="stats">
+        <div class="stat">
+          <span class="stat__valor num">{stats.invitados}<span class="tenue" style="font-size:1rem"> / {e.limiteInvitados}</span></span>
+          <span class="stat__etiqueta">Invitados</span>
+        </div>
+        <div class="stat">
+          <span class="stat__valor num">{stats.abiertos}</span>
+          <span class="stat__etiqueta">Abrieron la invitación</span>
+        </div>
+        <div class="stat">
+          <span class="stat__valor num">{stats.asisten}</span>
+          <span class="stat__etiqueta">Asisten · {stats.pasesConfirmados} pases</span>
+        </div>
+        <div class="stat">
+          <span class="stat__valor num">{stats.noAsisten}</span>
+          <span class="stat__etiqueta">No asisten</span>
+        </div>
+        <div class="stat">
+          <span class="stat__valor num">{stats.pendientes}</span>
+          <span class="stat__etiqueta">Pendientes</span>
+        </div>
+      </div>
+
+      {
+        stats.invitados > 0 && (
+          <div class="pila" style="gap:.4rem">
+            <div class="acciones" style="justify-content:space-between">
+              <span class="pequeno suave">Respondieron</span>
+              <span class="pequeno num">{porcentaje(stats.asisten + stats.noAsisten, stats.invitados)}%</span>
+            </div>
+            <div class="barra">
+              <span style={`width:${porcentaje(stats.asisten + stats.noAsisten, stats.invitados)}%`} />
+            </div>
+          </div>
+        )
+      }
+
+      <section class="tarjeta pila">
+        <div class="tarjeta__cabecera" style="margin:0">
+          <h2>Links</h2>
+          <a class="btn btn--sm" href={`/panel/${e.tokenPanel}/invitados`}><Icono nombre="usuarios" /> Invitados</a>
+        </div>
+
+        <div class="pila" style="gap:.4rem">
+          <span class="campo__etiqueta">Invitación general</span>
+          <div class="copiar">
+            <code>{linkGeneral}</code>
+            <button class="btn btn--sm" data-copiar={linkGeneral}><Icono nombre="copiar" /> Copiar</button>
+          </div>
+          <span class="campo__ayuda">Solo para ver. Para confirmar, cada invitado usa su link personal.</span>
+        </div>
+
+        <div class="pila" style="gap:.4rem">
+          <span class="campo__etiqueta">Panel del cliente (privado)</span>
+          <div class="copiar">
+            <code>{linkPanel}</code>
+            <button class="btn btn--sm" data-copiar={linkPanel}><Icono nombre="copiar" /> Copiar</button>
+          </div>
+          <div class="acciones">
+            {
+              waCliente ? (
+                <a class="btn btn--sm" href={waCliente} target="_blank" rel="noopener">
+                  <Icono nombre="whatsapp" /> Enviar al cliente
+                </a>
+              ) : (
+                <span class="campo__ayuda">El cliente no tiene WhatsApp registrado.</span>
+              )
+            }
+            <a class="btn btn--sm" href={`/panel/${e.tokenPanel}`}><Icono nombre="enlace" /> Abrir panel</a>
+            <button class="btn btn--sm btn--fantasma" data-abrir="dlg-regenerar"><Icono nombre="refrescar" /> Regenerar</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="tarjeta pila">
+        <div class="tarjeta__cabecera" style="margin:0">
+          <h2>Pagos</h2>
+          <button class="btn btn--sm btn--primario" data-abrir="dlg-pago"><Icono nombre="mas" /> Registrar pago</button>
+        </div>
+        <dl class="lista-def">
+          <div><dt>Precio</dt><dd class="num">{dinero(e.precio, e.moneda)}</dd></div>
+          <div><dt>Pagado</dt><dd class="num">{dinero(pagado, e.moneda)}</dd></div>
+          <div>
+            <dt>Saldo</dt>
+            <dd class="num">
+              {saldo > 0 ? dinero(saldo, e.moneda) : <span class="insignia insignia--exito insignia--sin-punto">Pagado</span>}
+            </dd>
+          </div>
+        </dl>
+        {
+          listaPagos.length > 0 && (
+            <div class="tabla-contenedor">
+              <table class="tabla tabla--tarjetas">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Método</th>
+                    <th>Nota</th>
+                    <th class="derecha">Monto</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {listaPagos.map((p) => (
+                    <tr>
+                      <td class="tabla__principal num">{fechaLarga(p.fecha, e.zonaHoraria)}</td>
+                      <td data-etiqueta="Método" style="text-transform:capitalize">{p.metodo}</td>
+                      <td data-etiqueta="Nota">{p.nota ?? '—'}</td>
+                      <td data-etiqueta="Monto" class="derecha num">{dinero(p.monto, e.moneda)}</td>
+                      <td class="derecha tabla__acciones" data-etiqueta="">
+                        <button
+                          class="btn btn--sm btn--fantasma btn--texto-peligro"
+                          data-abrir="dlg-borrar-pago"
+                          data-valores={JSON.stringify({ id: p.id, resumen: `${dinero(p.monto, e.moneda)} · ${p.metodo}` })}
+                        >
+                          Quitar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        }
+      </section>
+    </div>
+
+    <aside class="pila pila--lg">
+      <section class="tarjeta">
+        <h2 style="margin-bottom:1rem">Resumen</h2>
+        <dl class="lista-def">
+          <div><dt>Cliente</dt><dd>{cliente?.nombre}</dd></div>
+          {cliente?.telefono && <div><dt>WhatsApp</dt><dd class="num">{telefonoLegible(cliente.telefono, e.prefijoTelefono)}</dd></div>}
+          {cliente?.email && <div><dt>Correo</dt><dd>{cliente.email}</dd></div>}
+          <div><dt>Plantilla</dt><dd>{m?.nombre ?? e.plantilla} <span class="tenue">v{e.plantillaVersion}</span></dd></div>
+          <div><dt>Paleta</dt><dd>{preset?.nombre ?? 'Original'}</dd></div>
+          <div><dt>Zona</dt><dd>{e.zonaHoraria}</dd></div>
+          <div><dt>Confirmar hasta</dt><dd class="num">{fechaCorta(fechaLimite(e), e.zonaHoraria)}</dd></div>
+          <div><dt>Pide pases</dt><dd>{e.configConfirmacion.pedirPases ? 'Sí' : 'No'}</dd></div>
+          <div><dt>Preguntas extra</dt><dd>{e.configConfirmacion.preguntas.length}</dd></div>
+          <div><dt>Creado</dt><dd class="num">{fechaCorta(e.creadoEn, e.zonaHoraria)}</dd></div>
+        </dl>
+      </section>
+
+      <section class="tarjeta pila">
+        <h2>Acciones</h2>
+        <a class="btn btn--bloque" href={`/panel/${e.tokenPanel}/confirmaciones.csv`}>
+          <Icono nombre="descargar" /> Exportar confirmaciones (CSV)
+        </a>
+        {
+          e.estado === 'publicado' && (
+            <form method="post">
+              <input type="hidden" name="_accion" value="despublicar" />
+              <button class="btn btn--bloque" type="submit">Volver a borrador</button>
+            </form>
+          )
+        }
+        {
+          e.estado !== 'finalizado' && (
+            <button class="btn btn--bloque btn--texto-peligro" data-abrir="dlg-finalizar">
+              <Icono nombre="bandera" /> Finalizar evento
+            </button>
+          )
+        }
+        <button class="btn btn--bloque btn--fantasma btn--texto-peligro" data-abrir="dlg-eliminar">
+          <Icono nombre="borrar" /> Eliminar evento
+        </button>
+      </section>
+    </aside>
+  </div>
+
+  <Dialogo
+    id="dlg-publicar"
+    titulo="¿Publicar la invitación?"
+    descripcion="Los links personales empezarán a funcionar y el cliente podrá enviarlos."
+    accion="publicar"
+    textoBoton="Publicar"
+  >
+    <p class="pequeno">
+      Saldo pendiente: <strong class="num">{saldo > 0 ? dinero(saldo, e.moneda) : 'ninguno'}</strong>.
+    </p>
+  </Dialogo>
+
+  <Dialogo
+    id="dlg-finalizar"
+    titulo="¿Finalizar el evento?"
+    descripcion="Se borran todos los invitados y sus confirmaciones. Esto no se puede deshacer."
+    accion="finalizar"
+    textoBoton="Finalizar y borrar invitados"
+    peligro
+  >
+    <p class="alerta alerta--aviso">
+      Hay {stats.invitados} invitados. Si el cliente quiere conservar la lista,&nbsp;
+      <a href={`/panel/${e.tokenPanel}/confirmaciones.csv`}>descarga el CSV</a>&nbsp;antes.
+    </p>
+    <p class="pequeno suave">El link general y el historial de pagos se conservan.</p>
+  </Dialogo>
+
+  <Dialogo
+    id="dlg-regenerar"
+    titulo="¿Regenerar el link del panel?"
+    descripcion="Úsalo si el link se filtró. El link actual dejará de funcionar y tendrás que enviarle el nuevo al cliente."
+    accion="regenerar_panel"
+    textoBoton="Regenerar"
+    peligro
+  />
+
+  <Dialogo id="dlg-pago" titulo="Registrar pago" accion="registrar_pago" textoBoton="Registrar">
+    <div class="rejilla rejilla--2">
+      <label class="campo">
+        <span>Monto ({e.moneda})</span>
+        <input name="monto" inputmode="decimal" required placeholder={saldo > 0 ? (saldo / 100).toFixed(2) : '0.00'} autofocus />
+      </label>
+      <label class="campo">
+        <span>Fecha</span>
+        <input type="date" name="fecha" value={hoy} required />
+      </label>
+      <label class="campo">
+        <span>Método</span>
+        <select name="metodo">
+          <option value="transferencia">Transferencia</option>
+          <option value="efectivo">Efectivo</option>
+          <option value="otro">Otro</option>
+        </select>
+      </label>
+      <label class="campo">
+        <span>Nota</span>
+        <input name="nota" maxlength="200" placeholder="Anticipo, saldo…" />
+      </label>
+    </div>
+  </Dialogo>
+
+  <Dialogo id="dlg-borrar-pago" titulo="¿Quitar este pago?" accion="borrar_pago" textoBoton="Quitar" peligro>
+    <input type="hidden" name="id" />
+    <p><strong data-texto="resumen"></strong></p>
+  </Dialogo>
+
+  <Dialogo
+    id="dlg-eliminar"
+    titulo="¿Eliminar el evento?"
+    descripcion="Se borra todo: invitación, invitados, confirmaciones y pagos. Los links dejan de existir."
+    accion="eliminar"
+    textoBoton="Eliminar definitivamente"
+    peligro
+  >
+    <label class="campo">
+      <span>Escribe <code>{e.slug}</code> para confirmar</span>
+      <input name="confirmacion" autocomplete="off" required pattern={e.slug.replace(/-/g, '\\-')} />
+    </label>
+  </Dialogo>
+</Admin>

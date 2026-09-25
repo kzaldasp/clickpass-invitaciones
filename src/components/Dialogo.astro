@@ -1,0 +1,71 @@
+---
+/**
+ * Popup para alertas, confirmaciones y formularios cortos (hasta ~4 campos).
+ * Lo abre cualquier boton con data-abrir="{id}". Si trae `accion`, el cuerpo
+ * es un formulario POST a la pagina actual con el campo oculto _accion.
+ */
+import Icono from './Icono.astro';
+
+interface Props {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  /** Valor de _accion que procesa la pagina. Sin esto el popup es solo informativo. */
+  accion?: string;
+  textoBoton?: string;
+  peligro?: boolean;
+  ancho?: boolean;
+  /** Para formularios con archivos. */
+  multipart?: boolean;
+}
+
+const { id, titulo, descripcion, accion, textoBoton = 'Guardar', peligro = false, ancho = false, multipart = false } =
+  Astro.props;
+const idTitulo = `${id}-titulo`;
+---
+
+<dialog id={id} class:list={['dialogo', { 'dialogo--ancho': ancho }]} aria-labelledby={idTitulo}>
+  {
+    accion ? (
+      <form method="post" enctype={multipart ? 'multipart/form-data' : undefined}>
+        <input type="hidden" name="_accion" value={accion} />
+        <div class="dialogo__cuerpo">
+          <div class="dialogo__cabecera">
+            <div class="pila" style="gap:.3rem">
+              <h2 id={idTitulo}>{titulo}</h2>
+              {descripcion && <p class="suave pequeno">{descripcion}</p>}
+            </div>
+            <button type="button" class="btn btn--fantasma btn--icono btn--sm" data-cerrar aria-label="Cerrar">
+              <Icono nombre="cerrar" />
+            </button>
+          </div>
+          <slot />
+        </div>
+        <div class="dialogo__pie">
+          <button type="button" class="btn" data-cerrar>
+            Cancelar
+          </button>
+          <button type="submit" class:list={['btn', peligro ? 'btn--peligro' : 'btn--primario']}>
+            {textoBoton}
+          </button>
+        </div>
+      </form>
+    ) : (
+      <div>
+        <div class="dialogo__cuerpo">
+          <div class="dialogo__cabecera">
+            <div class="pila" style="gap:.3rem">
+              <h2 id={idTitulo}>{titulo}</h2>
+              {descripcion && <p class="suave pequeno">{descripcion}</p>}
+            </div>
+            <button type="button" class="btn btn--fantasma btn--icono btn--sm" data-cerrar aria-label="Cerrar">
+              <Icono nombre="cerrar" />
+            </button>
+          </div>
+          <slot />
+        </div>
+        <slot name="pie" />
+      </div>
+    )
+  }
+</dialog>

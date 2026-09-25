@@ -1,0 +1,145 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import Estado from '../../components/Estado.astro';
+import Icono from '../../components/Icono.astro';
+import { listarEventos } from '../../db/consultas';
+import { fechaCorta } from '../../lib/fechas';
+import { dinero, normalizarNombre } from '../../lib/texto';
+
+const filtro = Astro.url.searchParams.get('estado') ?? 'activos';
+const q = Astro.url.searchParams.get('q')?.trim() ?? '';
+
+const todos = await listarEventos();
+const ahora = Date.now();
+
+const porEstado = {
+  activos: todos.filter((f) => f.evento.estado !== 'finalizado'),
+  borrador: todos.filter((f) => f.evento.estado === 'borrador'),
+  publicado: todos.filter((f) => f.evento.estado === 'publicado'),
+  finalizado: todos.filter((f) => f.evento.estado === 'finalizado'),
+  todos,
+} as const;
+
+const clave = (filtro in porEstado ? filtro : 'activos') as keyof typeof porEstado;
+const buscado = normalizarNombre(q);
+const filas = porEstado[clave].filter(
+  (f) =>
+    !buscado ||
+    normalizarNombre(`${f.evento.contenido.festejado.nombre} ${f.evento.slug} ${f.cliente.nombre}`).includes(buscado),
+);
+
+const proximos = todos.filter((f) => f.evento.estado !== 'finalizado' && f.evento.fecha.getTime() > ahora).length;
+const porCobrar = todos.reduce((s, f) => s + Math.max(0, f.evento.precio - Number(f.pagado)), 0);
+
+const pestanas = [
+  ['activos', 'Activos'],
+  ['borrador', 'Borradores'],
+  ['publicado', 'Publicados'],
+  ['finalizado', 'Finalizados'],
+  ['todos', 'Todos'],
+] as const;
+---
+
+<Admin titulo="Eventos">
+  <header class="cabecera">
+    <div class="cabecera__texto">
+      <h1>Eventos</h1>
+      <p class="suave">Cada evento es una invitación vendida.</p>
+    </div>
+    <a href="/admin/eventos/nuevo" class="btn btn--primario"><Icono nombre="mas" /> Nuevo evento</a>
+  </header>
+
+  <div class="stats" style="margin-bottom:2rem">
+    <div class="stat">
+      <span class="stat__valor num">{proximos}</span>
+      <span class="stat__etiqueta">Próximos</span>
+    </div>
+    <div class="stat">
+      <span class="stat__valor num">{porEstado.borrador.length}</span>
+      <span class="stat__etiqueta">En borrador</span>
+    </div>
+    <div class="stat">
+      <span class="stat__valor num">{porEstado.publicado.length}</span>
+      <span class="stat__etiqueta">Publicados</span>
+    </div>
+    <div class="stat">
+      <span class="stat__valor num">{dinero(porCobrar, 'USD')}</span>
+      <span class="stat__etiqueta">Por cobrar</span>
+    </div>
+  </div>
+
+  <form class="filtros" method="get">
+    <input type="hidden" name="estado" value={clave} />
+    <input class="input" type="search" name="q" value={q} placeholder="Buscar por festejado, link o cliente" />
+    <nav class="pildoras" aria-label="Filtrar por estado">
+      {
+        pestanas.map(([valor, etiqueta]) => (
+          <a
+            class="pildora"
+            href={`?estado=${valor}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+            aria-current={clave === valor ? 'true' : undefined}
+          >
+            {etiqueta} <span class="num">({porEstado[valor].length})</span>
+          </a>
+        ))
+      }
+    </nav>
+  </form>
+
+  <div class="tabla-contenedor">
+    {
+      filas.length === 0 ? (
+        <div class="vacio">
+          <h3>{q ? 'Sin resultados' : 'Aún no hay eventos aquí'}</h3>
+          <p>{q ? 'Prueba con otro nombre.' : 'Crea el primero para empezar a vender.'}</p>
+          {!q && (
+            <a href="/admin/eventos/nuevo" class="btn btn--primario">
+              <Icono nombre="mas" /> Nuevo evento
+            </a>
+          )}
+        </div>
+      ) : (
+        <table class="tabla tabla--tarjetas">
+          <thead>
+            <tr>
+              <th>Evento</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Estado</th>
+              <th class="derecha">Asisten</th>
+              <th class="derecha">Saldo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map(({ evento: e, cliente, invitados, asisten, pagado }) => {
+              const saldo = e.precio - Number(pagado);
+              return (
+                <tr>
+                  <td class="tabla__principal">
+                    <a href={`/admin/eventos/${e.id}`}>{e.contenido.festejado.nombre}</a>
+                    <div class="suave pequeno" style="font-weight:400">
+                      {e.contenido.tipo} · <span class="mono">/{e.slug}</span>
+                    </div>
+                  </td>
+                  <td data-etiqueta="Fecha" class="num">
+                    {fechaCorta(e.fecha, e.zonaHoraria)}
+                  </td>
+                  <td data-etiqueta="Cliente">{cliente.nombre}</td>
+                  <td data-etiqueta="Estado">
+                    <Estado estado={e.estado} />
+                  </td>
+                  <td data-etiqueta="Asisten" class="derecha num">
+                    {Number(asisten)} / {Number(invitados)}
+                  </td>
+                  <td data-etiqueta="Saldo" class="derecha num">
+                    {saldo > 0 ? dinero(saldo, e.moneda) : <span class="insignia insignia--exito insignia--sin-punto">Pagado</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )
+    }
+  </div>
+</Admin>

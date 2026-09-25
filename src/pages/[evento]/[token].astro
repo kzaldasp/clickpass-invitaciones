@@ -1,0 +1,26 @@
+---
+/**
+ * Link personal: /ana-y-luis/k3x9p2Qa7Z. La invitacion con su nombre, sus
+ * pases y el formulario de confirmacion.
+ */
+import { eventoPorSlug, invitadoDeEvento, marcarAbierto } from '../../db/consultas';
+import { componenteDe } from '../../plantillas/componentes';
+import { confirmacionVista, eventoVista, invitadoVista } from '../../lib/vistas';
+
+const e = await eventoPorSlug(Astro.params.evento!);
+
+// Pasada la fiesta los invitados se borran: cualquier link personal va al general.
+if (e?.estado === 'finalizado') return Astro.redirect(`/${e.slug}`);
+
+const i = e && (await invitadoDeEvento(e.id, Astro.params.token!));
+const Plantilla = e && componenteDe(e.plantilla, e.plantillaVersion);
+if (!e || !i || !Plantilla) return Astro.rewrite('/404');
+
+// Los links personales solo funcionan cuando el admin publica el evento. El
+// aviso vive en otra ruta para no mezclar el CSS de la plantilla con el de la
+// plataforma.
+if (e.estado !== 'publicado') return Astro.rewrite(`/aviso/preparacion?nombre=${encodeURIComponent(i.nombre)}`);
+if (!i.abiertoEn) await marcarAbierto(i.id);
+---
+
+<Plantilla evento={eventoVista(e)} invitado={invitadoVista(i)} confirmacion={confirmacionVista(e, i)} />

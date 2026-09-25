@@ -1,6 +1,5 @@
 ---
 import '../styles/global.css';
-import { ruta } from '../lib/rutas';
 
 interface Props {
   titulo: string;
@@ -13,6 +12,10 @@ interface Props {
   borrador?: boolean;
   /** Ruta del audio de fondo, si el evento lo trae. */
   musica?: string;
+  /** Color de la barra del navegador movil. */
+  colorTema?: string;
+  /** Variables CSS de un preset: sobrescriben la paleta de la plantilla. */
+  variables?: Record<string, string>;
 }
 
 const {
@@ -22,14 +25,23 @@ const {
   tema,
   borrador = false,
   musica,
+  colorTema = '#0a0a14',
+  variables,
 } = Astro.props;
 
-const urlCanonica = new URL(Astro.url.pathname, Astro.site);
-const urlImagen = new URL(ruta(imagen), Astro.site);
+// WhatsApp exige URLs absolutas. El origen sale de la peticion: sirve igual en
+// workers.dev que en el dominio propio.
+const urlCanonica = new URL(Astro.url.pathname, Astro.url.origin);
+const urlImagen = new URL(imagen, Astro.url.origin);
+const estiloPreset = variables
+  ? Object.entries(variables)
+      .map(([k, v]) => `${k}:${v}`)
+      .join(';')
+  : undefined;
 ---
 
 <!doctype html>
-<html lang="es" data-tema={tema}>
+<html lang="es" data-tema={tema} style={estiloPreset}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -48,7 +60,7 @@ const urlImagen = new URL(ruta(imagen), Astro.site);
     {borrador && <meta name="robots" content="noindex, nofollow" />}
 
     {/* La barra del navegador movil se tine del color del tema. */}
-    <meta name="theme-color" content="#0a0a14" />
+    <meta name="theme-color" content={colorTema} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

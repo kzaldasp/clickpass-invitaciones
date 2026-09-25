@@ -1,0 +1,135 @@
+---
+import Invitacion from '../../layouts/Invitacion.astro';
+import Portada from './secciones/Portada.astro';
+import Heroe from './secciones/Heroe.astro';
+import CuentaRegresiva from './secciones/CuentaRegresiva.astro';
+import Lugares from './secciones/Lugares.astro';
+import DressCode from './secciones/DressCode.astro';
+import Pases from './secciones/Pases.astro';
+import Cierre from './secciones/Cierre.astro';
+import Confirmacion from '../compartidas/Confirmacion.astro';
+
+import { fechaLarga, fechaPartes } from '../../lib/fechas';
+import { manifiesto } from './manifiesto';
+import type { PropsPlantilla } from '../tipos';
+
+type Props = PropsPlantilla;
+
+const { evento, invitado, confirmacion } = Astro.props;
+const d = evento.contenido;
+
+/**
+ * Ilustraciones del tema. Cuando lleguen los PNG recortados basta con cambiar
+ * la extension aqui: ninguna seccion conoce estas rutas.
+ */
+const ILUSTRACIONES = {
+  heroeColgado: '/ilustraciones/aracnido/heroe-colgado.svg',
+};
+
+const fechaTexto = `${fechaLarga(evento.fecha, evento.zonaHoraria)} · ${fechaPartes(evento.fecha, evento.zonaHoraria).hora}`;
+const pases = invitado ? (invitado.pases === 1 ? '1 pase' : `${invitado.pases} pases`) : null;
+
+const saludo = invitado ? `${invitado.nombre}, estás invitado` : d.tipo;
+const titulo = `${d.festejado.nombre} · ${d.tipo}`;
+const descripcion = d.frase ?? `${saludo} — ${fechaTexto}`;
+
+const preset = manifiesto.presets?.find((p) => p.id === evento.preset);
+---
+
+<Invitacion
+  titulo={titulo}
+  descripcion={descripcion}
+  imagen={d.galeria[0] ?? manifiesto.portada}
+  tema="aracnido"
+  colorTema={preset?.variables['--c-fondo'] ?? manifiesto.colorTema}
+  variables={preset?.variables}
+  borrador={evento.estado === 'borrador'}
+  musica={d.musica?.archivo}
+>
+  <Portada
+    tipo={d.tipo}
+    nombre={d.festejado.nombre}
+    edad={d.festejado.edad}
+    frase={d.frase}
+    invitado={invitado?.nombre}
+  />
+
+  <main class="aracnido">
+    <Heroe ilustracion={ILUSTRACIONES.heroeColgado} mensaje={d.frase ?? '¡Te espero en la fiesta!'} />
+
+    <CuentaRegresiva
+      fechaISO={evento.fecha.toISOString()}
+      fechaTexto={fechaTexto}
+      zona={evento.zonaHoraria}
+    />
+
+    <Lugares lugares={d.lugares} zona={evento.zonaHoraria} />
+
+    {d.dressCode && <DressCode titulo={d.dressCode.titulo} nota={d.dressCode.nota} />}
+
+    <Pases
+      invitado={invitado?.nombre}
+      pases={pases}
+      nota={invitado?.nota ?? undefined}
+      tipo={d.tipo}
+      token={invitado?.token}
+    />
+
+    <section class="escena">
+      <div class="contenedor aracnido-confirmacion" data-anim="sube">
+        <Confirmacion confirmacion={confirmacion} invitado={invitado} zonaHoraria={evento.zonaHoraria} />
+      </div>
+    </section>
+
+    <Cierre despedida={d.despedida} anfitriones={d.anfitriones} />
+  </main>
+</Invitacion>
+
+<style is:global>
+  /* --- Fuentes del tema --------------------------------------------------- */
+  @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@400;700;800&display=swap');
+
+  /* --- Paleta ------------------------------------------------------------- */
+  html[data-tema='aracnido'] {
+    --c-fondo: #0a0a14;
+    --c-rojo: #e23636;
+    --c-rojo-osc: #9c1d1d;
+    --c-azul: #1b2a6b;
+    --c-azul-cl: #2e4da7;
+    --c-oro: #f5c451;
+    --c-texto: #f3f0ea;
+    --c-texto-suave: rgba(243, 240, 234, 0.72);
+    --c-hilo: rgba(243, 240, 234, 0.4);
+    --c-hilo-anillo: rgba(243, 240, 234, 0.24);
+
+    --f-titulo: 'Luckiest Guy', system-ui, sans-serif;
+    --f-cuerpo: 'Nunito', system-ui, -apple-system, sans-serif;
+  }
+
+  /* El fondo no es plano: dos luces frias sostienen toda la narracion. */
+  html[data-tema='aracnido'] body {
+    background:
+      radial-gradient(circle at 12% 8%, rgba(46, 77, 167, 0.3) 0%, transparent 42%),
+      radial-gradient(circle at 88% 72%, rgba(156, 29, 29, 0.24) 0%, transparent 46%),
+      var(--c-fondo);
+  }
+
+  html[data-tema='aracnido'] .titulo-seccion {
+    margin-block-end: 1.6rem;
+    font-size: clamp(1.7rem, 8vw, 2.3rem);
+    text-align: center;
+    color: var(--c-texto);
+  }
+
+  /* <Confirmacion /> con la piel del tema: solo variables. */
+  html[data-tema='aracnido'] .aracnido-confirmacion {
+    --conf-fondo: linear-gradient(165deg, rgba(46, 77, 167, 0.3) 0%, rgba(10, 10, 20, 0.6) 100%);
+    --conf-texto: var(--c-texto);
+    --conf-suave: var(--c-texto-suave);
+    --conf-acento: var(--c-rojo);
+    --conf-sobre-acento: #fff;
+    --conf-borde: rgba(243, 240, 234, 0.16);
+    --conf-radio: 1.2rem;
+    --conf-fuente-titulo: var(--f-titulo);
+  }
+</style>

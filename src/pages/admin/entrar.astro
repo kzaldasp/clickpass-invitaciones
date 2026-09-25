@@ -1,0 +1,46 @@
+---
+import { eq } from 'drizzle-orm';
+import Simple from '../../layouts/Simple.astro';
+import { db } from '../../db/cliente';
+import { usuarios } from '../../db/schema';
+import { verificarClave } from '../../lib/claves';
+import { rutaSegura, texto } from '../../lib/formularios';
+import { iniciarSesion } from '../../lib/sesion';
+
+const volver = rutaSegura(Astro.url.searchParams.get('volver'), '/admin');
+if (Astro.locals.usuario?.rol === 'admin') return Astro.redirect(volver);
+
+let error = '';
+let email = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  email = texto(form, 'email', 200).toLowerCase();
+  const clave = texto(form, 'clave', 200);
+  const u = email ? await db().query.usuarios.findFirst({ where: eq(usuarios.email, email) }) : undefined;
+
+  // Mismo mensaje para correo inexistente y clave incorrecta: no revela quien es admin.
+  if (u?.rol === 'admin' && u.claveHash && (await verificarClave(clave, u.claveHash))) {
+    await iniciarSesion(Astro.cookies, u.id, Astro.url.protocol === 'https:');
+    return Astro.redirect(volver);
+  }
+  error = 'Correo o clave incorrectos.';
+}
+---
+
+<Simple titulo="Entrar">
+  <h1>Administración</h1>
+  <p class="suave pequeno">Acceso para el equipo de ClickPass.</p>
+  {error && <p class="alerta alerta--peligro">{error}</p>}
+  <form method="post" class="formulario">
+    <label class="campo">
+      <span>Correo</span>
+      <input type="email" name="email" value={email} required autocomplete="username" autofocus />
+    </label>
+    <label class="campo">
+      <span>Clave</span>
+      <input type="password" name="clave" required autocomplete="current-password" />
+    </label>
+    <button class="btn btn--primario btn--bloque" type="submit">Entrar</button>
+  </form>
+</Simple>

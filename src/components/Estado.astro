@@ -1,0 +1,14 @@
+---
+interface Props {
+  estado: 'borrador' | 'publicado' | 'finalizado';
+}
+
+const { estado } = Astro.props;
+const info = {
+  borrador: { texto: 'Borrador', clase: 'insignia--aviso' },
+  publicado: { texto: 'Publicado', clase: 'insignia--exito' },
+  finalizado: { texto: 'Finalizado', clase: '' },
+}[estado];
+---
+
+<span class:list={['insignia', info.clase]}>{info.texto}</span>

@@ -1,0 +1,102 @@
+---
+/**
+ * Marco del admin y del panel: menu lateral fijo (siempre oscuro) en
+ * escritorio, cajon con barra superior en movil.
+ */
+import Base from './Base.astro';
+import Icono, { type NombreIcono } from '../components/Icono.astro';
+
+export interface ItemMenu {
+  href: string;
+  etiqueta: string;
+  icono: NombreIcono;
+  /** Solo se marca activo con la ruta exacta (para "Inicio"). */
+  exacto?: boolean;
+  /** Otras rutas (y sus hijas) que tambien marcan este item como activo. */
+  tambien?: string[];
+  grupo?: string;
+}
+
+interface Props {
+  titulo: string;
+  subtituloMarca: string;
+  inicio: string;
+  menu: ItemMenu[];
+  usuario?: string;
+  /** Muestra "Salir" (solo con sesion). */
+  salir?: string;
+  angosto?: boolean;
+}
+
+const { titulo, subtituloMarca, inicio, menu, usuario, salir, angosto = false } = Astro.props;
+const ruta = Astro.url.pathname.replace(/\/$/, '') || '/';
+const bajo = (base: string) => ruta === base || ruta.startsWith(`${base}/`);
+const activo = (i: ItemMenu) => (i.exacto ? ruta === i.href : bajo(i.href)) || !!i.tambien?.some(bajo);
+
+// Agrupa conservando el orden.
+const grupos: { nombre?: string; items: ItemMenu[] }[] = [];
+for (const item of menu) {
+  const ultimo = grupos.at(-1);
+  if (ultimo && ultimo.nombre === item.grupo) ultimo.items.push(item);
+  else grupos.push({ nombre: item.grupo, items: [item] });
+}
+---
+
+<Base titulo={titulo}>
+  <div class="shell">
+    <header class="barra-movil">
+      <button class="btn btn--icono" type="button" data-menu aria-expanded="false" aria-label="Abrir menú">
+        <Icono nombre="menu" />
+      </button>
+      <a href={inicio} class="barra-movil__titulo" style="text-decoration:none">ClickPass</a>
+    </header>
+
+    <div class="velo-lateral" data-menu hidden></div>
+
+    <aside class="lateral" aria-label="Navegación">
+      <a href={inicio} class="lateral__marca">
+        <span class="lateral__logo">ClickPass</span>
+        <span class="lateral__sub">{subtituloMarca}</span>
+      </a>
+
+      {
+        grupos.map((g) => (
+          <>
+            {g.nombre && <p class="lateral__grupo">{g.nombre}</p>}
+            <nav>
+              {g.items.map((i) => (
+                <a href={i.href} class="lateral__enlace" aria-current={activo(i) ? 'page' : undefined}>
+                  <Icono nombre={i.icono} />
+                  {i.etiqueta}
+                </a>
+              ))}
+            </nav>
+          </>
+        ))
+      }
+
+      <div class="lateral__pie">
+        <slot name="pie-lateral" />
+        <button type="button" class="lateral__enlace" data-modo>
+          <Icono nombre="luna" />
+          Modo claro / oscuro
+        </button>
+        {
+          salir && (
+            <form method="post" action={salir}>
+              <button type="submit" class="lateral__enlace">
+                <Icono nombre="salir" />
+                Salir
+              </button>
+            </form>
+          )
+        }
+        {usuario && <p class="lateral__usuario">{usuario}</p>}
+      </div>
+    </aside>
+
+    <main class:list={['contenido', { 'contenido--angosto': angosto }]}>
+      <slot />
+    </main>
+  </div>
+</Base>

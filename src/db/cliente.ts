@@ -1,17 +1,17 @@
-import { createClient } from '@libsql/client';
-import { drizzle } from 'drizzle-orm/libsql';
+import { createClient } from '@libsql/client/web';
+import { drizzle, type LibSQLDatabase } from 'drizzle-orm/libsql';
+import { TURSO_AUTH_TOKEN, TURSO_DATABASE_URL } from 'astro:env/server';
 import * as schema from './schema';
 
 /**
- * En local: TURSO_DATABASE_URL=file:local.db (sin token).
- * En produccion: la URL libsql:// de Turso mas TURSO_AUTH_TOKEN.
- *
- * Al pasar a Cloudflare (fase 1) esto se lee con `astro:env/server` y el
- * cliente se importa de `@libsql/client/web`: los Workers no tienen sockets.
+ * Cliente HTTP de Turso: el unico que funciona en Workers (no hay sockets ni
+ * disco). En local apunta al servidor de `npm run db:dev`.
  */
-const url = import.meta.env.TURSO_DATABASE_URL;
-const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+let instancia: LibSQLDatabase<typeof schema> | undefined;
 
-if (!url) throw new Error('Falta TURSO_DATABASE_URL (ver .env.example)');
-
-export const db = drizzle(createClient({ url, authToken }), { schema });
+export function db(): LibSQLDatabase<typeof schema> {
+  instancia ??= drizzle(createClient({ url: TURSO_DATABASE_URL, authToken: TURSO_AUTH_TOKEN }), {
+    schema,
+  });
+  return instancia;
+}

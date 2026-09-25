@@ -1,0 +1,373 @@
+---
+/**
+ * Formulario de confirmacion. QUE pregunta lo decide la config del evento;
+ * COMO se ve lo decide la plantilla.
+ *
+ * Estilo: trae una base neutra de especificidad cero (:where) que lee estas
+ * variables, para que la plantilla solo tenga que definirlas:
+ *   --conf-fondo, --conf-texto, --conf-suave, --conf-acento, --conf-sobre-acento,
+ *   --conf-borde, --conf-radio, --conf-fuente-titulo
+ * Si quiere mas, puede estilizar las clases .conf__* con estilos globales.
+ *
+ * Sin JS el formulario hace POST normal y vuelve con ?confirmado=1. Con JS se
+ * envia con fetch y la invitacion no se recarga (no vuelve a salir la portada).
+ */
+import type { ConfirmacionVista, InvitadoVista } from '../tipos';
+import { fechaEnFrase } from '../../lib/fechas';
+
+interface Props {
+  confirmacion: ConfirmacionVista;
+  invitado?: InvitadoVista;
+  zonaHoraria: string;
+  titulo?: string;
+}
+
+const { confirmacion: c, invitado, zonaHoraria, titulo = 'Confirma tu asistencia' } = Astro.props;
+const respuesta = c.respuesta;
+const limite = fechaEnFrase(c.fechaLimite, zonaHoraria);
+const recienConfirmado = Astro.url.searchParams.has('confirmado');
+
+const pasesMax = invitado?.pases ?? 2;
+const pasesActuales = respuesta && respuesta.estado === 'asiste' ? respuesta.pasesConfirmados : pasesMax;
+
+function resumen(r: typeof respuesta): string | null {
+  if (!r || r.estado === 'pendiente') return null;
+  if (r.estado === 'no_asiste') return 'Respondiste que no podrás asistir.';
+  const p = r.pasesConfirmados === 1 ? '1 pase' : `${r.pasesConfirmados} pases`;
+  return `Confirmaste tu asistencia con ${p}.`;
+}
+const textoResumen = resumen(respuesta);
+---
+
+<div class="conf" id="confirmacion" data-confirmacion data-modo={c.modo}>
+  <h2 class="conf__titulo">{titulo}</h2>
+
+  {
+    c.modo === 'general' && (
+      <p class="conf__aviso">
+        Para confirmar usa el link personal que te enviaron por WhatsApp.
+      </p>
+    )
+  }
+
+  {
+    c.modo !== 'general' && (
+      <>
+        <p class="conf__estado" data-conf-resumen aria-live="polite">
+          {recienConfirmado && textoResumen ? '¡Gracias! ' : ''}
+          {textoResumen}
+        </p>
+
+        {c.abierta ? (
+          <form
+            class="conf__form"
+            method="POST"
+            action="/api/confirmar"
+            data-conf-form
+          >
+            <input type="hidden" name="token" value={invitado?.token ?? ''} />
+
+            <fieldset class="conf__opciones">
+              <legend class="conf__legend">¿Nos acompañas?</legend>
+              <label class="conf__opcion">
+                <input
+                  type="radio"
+                  name="respuesta"
+                  value="asiste"
+                  required
+                  checked={respuesta?.estado === 'asiste'}
+                />
+                <span>Sí, ahí estaré</span>
+              </label>
+              <label class="conf__opcion">
+                <input
+                  type="radio"
+                  name="respuesta"
+                  value="no_asiste"
+                  checked={respuesta?.estado === 'no_asiste'}
+                />
+                <span>No podré asistir</span>
+              </label>
+            </fieldset>
+
+            {c.config.pedirPases && pasesMax > 1 && (
+              <label class="conf__campo" data-solo-asiste>
+                <span class="conf__etiqueta">¿Cuántos asistirán?</span>
+                <select name="pases" class="conf__control">
+                  {Array.from({ length: pasesMax }, (_, i) => i + 1).map((n) => (
+                    <option value={n} selected={n === pasesActuales}>
+                      {n} de {pasesMax}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {c.config.preguntas.map((p) => {
+              const valor = respuesta?.extras[p.id];
+              const nombre = `extra_${p.id}`;
+              return (
+                <div class="conf__campo" data-solo-asiste>
+                  {p.tipo === 'texto' && (
+                    <label>
+                      <span class="conf__etiqueta">{p.etiqueta}</span>
+                      <input
+                        class="conf__control"
+                        type="text"
+                        name={nombre}
+                        maxlength="300"
+                        value={typeof valor === 'string' ? valor : ''}
+                        data-obligatoria={p.obligatoria ? '' : undefined}
+                      />
+                    </label>
+                  )}
+                  {p.tipo === 'si_no' && (
+                    <fieldset class="conf__opciones conf__opciones--linea">
+                      <legend class="conf__etiqueta">{p.etiqueta}</legend>
+                      <label class="conf__opcion">
+                        <input type="radio" name={nombre} value="si" checked={valor === true} />
+                        <span>Sí</span>
+                      </label>
+                      <label class="conf__opcion">
+                        <input type="radio" name={nombre} value="no" checked={valor === false} />
+                        <span>No</span>
+                      </label>
+                    </fieldset>
+                  )}
+                  {p.tipo === 'opcion' && (
+                    <label>
+                      <span class="conf__etiqueta">{p.etiqueta}</span>
+                      <select class="conf__control" name={nombre}>
+                        <option value="">Elige una opción</option>
+                        {p.opciones.map((o) => (
+                          <option value={o} selected={valor === o}>
+                            {o}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
+              );
+            })}
+
+            {c.config.pedirMensaje && (
+              <label class="conf__campo">
+                <span class="conf__etiqueta">Un mensaje (opcional)</span>
+                <textarea class="conf__control" name="mensaje" rows="3" maxlength="500">{respuesta?.mensaje ?? ''}</textarea>
+              </label>
+            )}
+
+            <p class="conf__error" data-conf-error hidden />
+
+            <button class="conf__boton" type="submit">
+              {textoResumen ? 'Actualizar respuesta' : 'Enviar respuesta'}
+            </button>
+
+            <p class="conf__limite">Puedes cambiar tu respuesta hasta el {limite}</p>
+          </form>
+        ) : (
+          <p class="conf__aviso">
+            {textoResumen
+              ? 'El plazo para cambiar tu respuesta ya cerró.'
+              : 'El plazo para confirmar ya cerró. Si necesitas algo, escribe a los anfitriones.'}
+          </p>
+        )}
+      </>
+    )
+  }
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-confirmacion]').forEach((raiz) => {
+    const form = raiz.querySelector<HTMLFormElement>('[data-conf-form]');
+    if (!form) return;
+
+    const error = form.querySelector<HTMLElement>('[data-conf-error]')!;
+    const resumen = raiz.querySelector<HTMLElement>('[data-conf-resumen]');
+    const boton = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
+    const demo = raiz.dataset.modo === 'demo';
+
+    // Los campos que solo aplican si asiste se atenuan al elegir "no".
+    const sincronizar = () => {
+      const asiste = form.querySelector<HTMLInputElement>('input[name=respuesta]:checked')?.value !== 'no_asiste';
+      form.querySelectorAll<HTMLElement>('[data-solo-asiste]').forEach((el) => {
+        el.hidden = !asiste;
+      });
+    };
+    form.addEventListener('change', sincronizar);
+    sincronizar();
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      error.hidden = true;
+
+      if (demo) {
+        if (resumen) resumen.textContent = 'Así verá tu invitado su confirmación. En la demo no se guarda nada.';
+        return;
+      }
+
+      boton.disabled = true;
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { accept: 'application/json' },
+        });
+        const datos = (await res.json()) as { ok: boolean; resumen?: string; error?: string };
+        if (!datos.ok) throw new Error(datos.error ?? 'No se pudo guardar');
+        if (resumen) resumen.textContent = `¡Gracias! ${datos.resumen}`;
+        boton.textContent = 'Actualizar respuesta';
+        resumen?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } catch (err) {
+        error.textContent = err instanceof Error ? err.message : 'No se pudo guardar';
+        error.hidden = false;
+      } finally {
+        boton.disabled = false;
+      }
+    });
+  });
+</script>
+
+<style>
+  :where(.conf) {
+    display: grid;
+    gap: 1rem;
+    padding: 1.5rem 1.25rem;
+    border: 1px solid var(--conf-borde, rgba(0, 0, 0, 0.12));
+    border-radius: var(--conf-radio, 1rem);
+    background: var(--conf-fondo, #fff);
+    color: var(--conf-texto, #1a1a1a);
+  }
+
+  :where(.conf__titulo) {
+    margin: 0;
+    font-family: var(--conf-fuente-titulo, inherit);
+    font-size: clamp(1.5rem, 7vw, 2rem);
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  :where(.conf__estado:empty) {
+    display: none;
+  }
+
+  :where(.conf__estado, .conf__aviso, .conf__limite) {
+    margin: 0;
+    text-align: center;
+    color: var(--conf-suave, rgba(0, 0, 0, 0.65));
+  }
+
+  :where(.conf__estado) {
+    font-weight: 700;
+    color: var(--conf-texto, #1a1a1a);
+  }
+
+  :where(.conf__limite) {
+    font-size: 0.8rem;
+  }
+
+  :where(.conf__form) {
+    display: grid;
+    gap: 1.1rem;
+  }
+
+  :where(.conf__opciones) {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  :where(.conf__opciones--linea) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  :where(.conf__opciones--linea .conf__etiqueta) {
+    grid-column: 1 / -1;
+  }
+
+  :where(.conf__legend) {
+    margin-block-end: 0.6rem;
+    font-weight: 700;
+  }
+
+  :where(.conf__opcion) {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-height: 3rem;
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--conf-borde, rgba(0, 0, 0, 0.12));
+    border-radius: calc(var(--conf-radio, 1rem) * 0.6);
+    cursor: pointer;
+  }
+
+  :where(.conf__opcion:has(input:checked)) {
+    border-color: var(--conf-acento, #1f4d3a);
+    box-shadow: inset 0 0 0 1px var(--conf-acento, #1f4d3a);
+  }
+
+  :where(.conf__opcion input) {
+    accent-color: var(--conf-acento, #1f4d3a);
+    inline-size: 1.15rem;
+    block-size: 1.15rem;
+  }
+
+  .conf [hidden] {
+    display: none;
+  }
+
+  :where(.conf__campo, .conf__campo > label) {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  :where(.conf__etiqueta) {
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  :where(.conf__control) {
+    inline-size: 100%;
+    min-height: 3rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--conf-borde, rgba(0, 0, 0, 0.18));
+    border-radius: calc(var(--conf-radio, 1rem) * 0.6);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+  }
+
+  :where(select.conf__control) {
+    appearance: auto;
+  }
+
+  :where(.conf__control option) {
+    color: #1a1a1a;
+  }
+
+  :where(.conf__boton) {
+    min-height: 3.2rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--conf-acento, #1f4d3a);
+    color: var(--conf-sobre-acento, #fff);
+    font: inherit;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+
+  :where(.conf__boton:disabled) {
+    opacity: 0.6;
+  }
+
+  :where(.conf__error) {
+    margin: 0;
+    color: #d14343;
+    font-weight: 700;
+    text-align: center;
+  }
+</style>

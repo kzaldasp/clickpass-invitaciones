@@ -5,7 +5,7 @@ export default defineConfig({
   out: './drizzle',
   dialect: 'turso',
   dbCredentials: {
-    url: process.env.TURSO_DATABASE_URL ?? 'file:local.db',
+    url: process.env.TURSO_DATABASE_URL ?? 'http://127.0.0.1:8880',
     authToken: process.env.TURSO_AUTH_TOKEN,
   },
 });

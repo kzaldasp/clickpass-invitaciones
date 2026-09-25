@@ -1,0 +1,1 @@
+ALTER TABLE `usuarios` ADD `clave_hash` text;

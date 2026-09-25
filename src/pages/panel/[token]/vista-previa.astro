@@ -1,0 +1,19 @@
+---
+/**
+ * "Asi lo vera tu invitado": la invitacion del evento con un invitado de
+ * ejemplo y el formulario en modo demo (no guarda). Funciona aunque el evento
+ * este en borrador.
+ */
+import { manifiestoDe } from '../../../plantillas';
+import { componenteDe } from '../../../plantillas/componentes';
+import { vistaDemo } from '../../../lib/vistas';
+
+const e = Astro.locals.evento!;
+const m = manifiestoDe(e.plantilla);
+const Plantilla = componenteDe(e.plantilla, e.plantillaVersion);
+if (!m || !Plantilla) return Astro.rewrite('/404');
+
+const { evento, invitado, confirmacion } = vistaDemo(m, e, { nombre: 'Tu invitado', pases: 2 });
+---
+
+<Plantilla evento={evento} invitado={invitado} confirmacion={confirmacion} />

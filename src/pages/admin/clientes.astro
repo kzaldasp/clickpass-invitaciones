@@ -1,0 +1,124 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import Dialogo from '../../components/Dialogo.astro';
+import Icono from '../../components/Icono.astro';
+import { clientes as listarClientes } from '../../db/consultas';
+import { borrarCliente, guardarCliente } from '../../lib/acciones/clientes';
+import { ponerAviso } from '../../lib/aviso';
+import { POR_DEFECTO } from '../../lib/config';
+import { texto } from '../../lib/formularios';
+import { telefonoLegible } from '../../lib/telefonos';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const accion = texto(form, '_accion', 40);
+  const error = accion === 'borrar' ? await borrarCliente(texto(form, 'id', 64)) : await guardarCliente(form);
+  ponerAviso(
+    Astro.cookies,
+    error ?? (accion === 'borrar' ? 'Cliente eliminado.' : texto(form, 'id') ? 'Cliente actualizado.' : 'Cliente creado.'),
+    error ? 'error' : 'exito',
+  );
+  return Astro.redirect('/admin/clientes');
+}
+
+const filas = await listarClientes();
+---
+
+<Admin titulo="Clientes">
+  <header class="cabecera">
+    <div class="cabecera__texto">
+      <h1>Clientes</h1>
+      <p class="suave">Quienes compran invitaciones. Entran a su panel con un link privado o con su correo.</p>
+    </div>
+    <button class="btn btn--primario" data-abrir="dlg-cliente" data-valores={JSON.stringify({ id: '', nombre: '', email: '', telefono: '' })}>
+      <Icono nombre="mas" /> Nuevo cliente
+    </button>
+  </header>
+
+  <div class="tabla-contenedor">
+    {
+      filas.length === 0 ? (
+        <div class="vacio">
+          <h3>Aún no hay clientes</h3>
+          <p>También se crean al hacer un evento nuevo.</p>
+        </div>
+      ) : (
+        <table class="tabla tabla--tarjetas">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>WhatsApp</th>
+              <th class="derecha">Eventos</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map(({ cliente: c, eventos }) => (
+              <tr>
+                <td class="tabla__principal">{c.nombre}</td>
+                <td data-etiqueta="Correo">{c.email ?? <span class="tenue">—</span>}</td>
+                <td data-etiqueta="WhatsApp" class="num">
+                  {c.telefono ? (
+                    <a href={`https://wa.me/${c.telefono}`} target="_blank" rel="noopener">
+                      {telefonoLegible(c.telefono, POR_DEFECTO.prefijoTelefono)}
+                    </a>
+                  ) : (
+                    <span class="tenue">—</span>
+                  )}
+                </td>
+                <td data-etiqueta="Eventos" class="derecha num">{Number(eventos)}</td>
+                <td class="derecha tabla__acciones" data-etiqueta="">
+                  <div class="acciones acciones--fin">
+                    <a class="btn btn--sm" href={`/admin/eventos/nuevo?cliente=${c.id}`}>
+                      <Icono nombre="mas" /> Evento
+                    </a>
+                    <button
+                      class="btn btn--sm btn--fantasma"
+                      data-abrir="dlg-cliente"
+                      data-valores={JSON.stringify({ id: c.id, nombre: c.nombre, email: c.email ?? '', telefono: c.telefono ? `+${c.telefono}` : '' })}
+                    >
+                      <Icono nombre="editar" /> Editar
+                    </button>
+                    {Number(eventos) === 0 && (
+                      <button
+                        class="btn btn--sm btn--fantasma btn--texto-peligro"
+                        data-abrir="dlg-borrar"
+                        data-valores={JSON.stringify({ id: c.id, nombre: c.nombre })}
+                        aria-label={`Borrar a ${c.nombre}`}
+                      >
+                        <Icono nombre="borrar" />
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )
+    }
+  </div>
+
+  <Dialogo id="dlg-cliente" titulo="Cliente" accion="guardar">
+    <input type="hidden" name="id" />
+    <label class="campo">
+      <span>Nombre</span>
+      <input name="nombre" required maxlength="120" autofocus />
+    </label>
+    <label class="campo">
+      <span>Correo</span>
+      <input name="email" type="email" maxlength="200" />
+      <span class="campo__ayuda">Opcional. Con correo puede entrar a su panel con un código.</span>
+    </label>
+    <label class="campo">
+      <span>WhatsApp</span>
+      <input name="telefono" inputmode="tel" maxlength="30" placeholder="099 123 4567" />
+    </label>
+  </Dialogo>
+
+  <Dialogo id="dlg-borrar" titulo="¿Borrar cliente?" accion="borrar" textoBoton="Borrar" peligro>
+    <input type="hidden" name="id" />
+    <p>Se borrará a <strong data-texto="nombre"></strong>.</p>
+  </Dialogo>
+</Admin>

@@ -1,0 +1,12 @@
+---
+import Simple from '../layouts/Simple.astro';
+Astro.response.status = 404;
+---
+
+<Simple titulo="No encontrada">
+  <h1>Esta página no existe</h1>
+  <p class="suave">
+    Revisa que el link esté completo. Si te lo enviaron por WhatsApp, pide que te lo vuelvan a mandar.
+  </p>
+  <a class="btn" href="/catalogo">Ver invitaciones</a>
+</Simple>

@@ -1,0 +1,426 @@
+---
+import Panel from '../../../layouts/Panel.astro';
+import Dialogo from '../../../components/Dialogo.astro';
+import Icono from '../../../components/Icono.astro';
+import { invitadosDe } from '../../../db/consultas';
+import {
+  agregarInvitado,
+  borrarInvitado,
+  editarInvitado,
+  guardarMensaje,
+  importarInvitados,
+} from '../../../lib/acciones/invitados';
+import { ponerAviso } from '../../../lib/aviso';
+import { MENSAJE_WHATSAPP } from '../../../lib/config';
+import { texto } from '../../../lib/formularios';
+import { normalizarNombre } from '../../../lib/texto';
+import { telefonoLegible } from '../../../lib/telefonos';
+import { envioDe } from '../../../lib/vistas';
+
+const e = Astro.locals.evento!;
+const aqui = `/panel/${e.tokenPanel}/invitados`;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const acciones = {
+    agregar: agregarInvitado,
+    editar: editarInvitado,
+    borrar: borrarInvitado,
+    importar: importarInvitados,
+    mensaje: guardarMensaje,
+  } as const;
+  const accion = acciones[texto(form, '_accion', 20) as keyof typeof acciones];
+  if (accion) {
+    const r = await accion(e, form);
+    ponerAviso(Astro.cookies, r.texto, r.error ? 'error' : 'exito');
+  }
+  return Astro.redirect(aqui + (Astro.url.search ?? ''));
+}
+
+const todos = await invitadosDe(e.id);
+const ver = Astro.url.searchParams.get('ver') ?? 'todos';
+const filtros = {
+  todos: () => true,
+  asisten: (i: (typeof todos)[number]) => i.respuesta === 'asiste',
+  no: (i: (typeof todos)[number]) => i.respuesta === 'no_asiste',
+  pendientes: (i: (typeof todos)[number]) => i.respuesta === 'pendiente',
+  sin_abrir: (i: (typeof todos)[number]) => !i.abiertoEn,
+} as const;
+const clave = (ver in filtros ? ver : 'todos') as keyof typeof filtros;
+const filas = todos.filter(filtros[clave]);
+const cuenta = (k: keyof typeof filtros) => todos.filter(filtros[k]).length;
+
+const puedeEnviar = e.estado === 'publicado';
+const bloqueada = e.estado === 'finalizado';
+const lleno = todos.length >= e.limiteInvitados;
+const origen = Astro.url.origin;
+const preguntas = new Map(e.configConfirmacion.preguntas.map((p) => [p.id, p.etiqueta]));
+
+function detalle(i: (typeof todos)[number]): string {
+  const lineas: string[] = [];
+  if (i.respuesta === 'asiste') lineas.push(`Asiste con ${i.pasesConfirmados} de ${i.pases} pases.`);
+  if (i.respuesta === 'no_asiste') lineas.push('No asistirá.');
+  for (const [id, valor] of Object.entries(i.respuestasExtra ?? {})) {
+    const etiqueta = preguntas.get(id);
+    if (etiqueta) lineas.push(`${etiqueta}: ${valor === true ? 'Sí' : valor === false ? 'No' : valor}`);
+  }
+  if (i.mensaje) lineas.push(`Mensaje: “${i.mensaje}”`);
+  return lineas.join('\n');
+}
+
+const pestanas = [
+  ['todos', 'Todos'],
+  ['asisten', 'Asisten'],
+  ['no', 'No asisten'],
+  ['pendientes', 'Sin responder'],
+  ['sin_abrir', 'Sin abrir'],
+] as const;
+
+const ejemplo = envioDe(e, { nombre: 'Familia López', token: 'k3x9p2Qa7Z', pases: 4, telefono: null }, origen);
+---
+
+<Panel titulo="Invitados">
+  <header class="cabecera">
+    <div class="cabecera__texto">
+      <h1>Invitados</h1>
+      <p class="suave">
+        <span class="num">{todos.length}</span> de <span class="num">{e.limiteInvitados}</span> de tu plan · cada invitado
+        recibe su propio link.
+      </p>
+    </div>
+    {
+      !bloqueada && (
+        <div class="acciones">
+          <button class="btn" data-abrir="dlg-mensaje" id="mensaje"><Icono nombre="mensaje" /> Mensaje</button>
+          <button class="btn" data-abrir="dlg-importar" disabled={lleno}><Icono nombre="subir" /> Importar Excel</button>
+          <button
+            class="btn btn--primario"
+            data-abrir="dlg-invitado"
+            data-valores={JSON.stringify({ _accion: 'agregar', id: '', nombre: '', pases: 1, telefono: '', nota: '' })}
+            disabled={lleno}
+          >
+            <Icono nombre="mas" /> Agregar
+          </button>
+        </div>
+      )
+    }
+  </header>
+
+  {
+    e.estado === 'borrador' && (
+      <p class="alerta alerta--aviso" style="margin-bottom:1.25rem">
+        Puedes preparar tu lista desde ya. El botón de enviar se activa cuando publiquemos tu invitación.
+      </p>
+    )
+  }
+  {
+    lleno && !bloqueada && (
+      <p class="alerta" style="margin-bottom:1.25rem">
+        Llegaste al límite de {e.limiteInvitados} invitados. Si necesitas más, escríbenos.
+      </p>
+    )
+  }
+
+  <div class="filtros">
+    <input class="input" type="search" placeholder="Buscar invitado" data-buscar aria-label="Buscar invitado" />
+    <nav class="pildoras" aria-label="Filtrar">
+      {
+        pestanas.map(([valor, etiqueta]) => (
+          <a class="pildora" href={`?ver=${valor}`} aria-current={clave === valor ? 'true' : undefined}>
+            {etiqueta} <span class="num">({cuenta(valor)})</span>
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+
+  <div class="tabla-contenedor">
+    {
+      filas.length === 0 ? (
+        <div class="vacio">
+          {todos.length === 0 ? (
+            <>
+              <h3>Tu lista está vacía</h3>
+              <p>Sube un Excel con los nombres, o agrégalos uno por uno.</p>
+              {!bloqueada && (
+                <div class="acciones" style="justify-content:center">
+                  <button class="btn" data-abrir="dlg-importar">
+                    <Icono nombre="subir" /> Importar Excel
+                  </button>
+                  <a class="btn btn--fantasma" href="/plantilla-invitados.csv" download>
+                    <Icono nombre="descargar" /> Descargar plantilla
+                  </a>
+                </div>
+              )}
+            </>
+          ) : (
+            <p>Nadie en este filtro.</p>
+          )}
+        </div>
+      ) : (
+        <table class="tabla tabla--tarjetas" data-tabla-invitados>
+          <thead>
+            <tr>
+              <th>Invitado</th>
+              <th class="derecha">Pases</th>
+              <th>WhatsApp</th>
+              <th>Estado</th>
+              <th class="derecha">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map((i) => {
+              const envio = envioDe(e, i, origen);
+              return (
+                <tr data-nombre={normalizarNombre(i.nombre)}>
+                  <td class="tabla__principal">
+                    {i.nombre}
+                    {i.nota && <div class="suave pequeno" style="font-weight:400">{i.nota}</div>}
+                  </td>
+                  <td data-etiqueta="Pases" class="derecha num">
+                    {i.respuesta === 'asiste' ? `${i.pasesConfirmados} / ${i.pases}` : i.pases}
+                  </td>
+                  <td data-etiqueta="WhatsApp" class="num">
+                    {i.telefono ? telefonoLegible(i.telefono, e.prefijoTelefono) : <span class="tenue">—</span>}
+                  </td>
+                  <td data-etiqueta="Estado">
+                    <div class="acciones" style="gap:.35rem">
+                      {i.respuesta === 'asiste' && <span class="insignia insignia--exito">Asiste</span>}
+                      {i.respuesta === 'no_asiste' && <span class="insignia insignia--peligro">No asiste</span>}
+                      {i.respuesta === 'pendiente' &&
+                        (i.abiertoEn ? (
+                          <span class="insignia insignia--info">La abrió</span>
+                        ) : (
+                          <span class="insignia">Sin abrir</span>
+                        ))}
+                      {i.ingresadoEn && <span class="insignia insignia--exito insignia--sin-punto">Ingresó</span>}
+                    </div>
+                  </td>
+                  <td class="derecha tabla__acciones" data-etiqueta="">
+                    <div class="acciones acciones--fin" style="gap:.25rem">
+                      {!bloqueada && (
+                        <a
+                          class="btn btn--sm btn--primario"
+                          href={envio.whatsapp}
+                          target="_blank"
+                          rel="noopener"
+                          aria-disabled={puedeEnviar ? undefined : 'true'}
+                          title={i.telefono ? 'Abrir WhatsApp con el mensaje listo' : 'Sin número: elige el contacto en WhatsApp'}
+                        >
+                          <Icono nombre="whatsapp" /> Enviar
+                        </a>
+                      )}
+                      <button
+                        class="btn btn--sm btn--fantasma btn--icono"
+                        data-copiar={envio.link}
+                        data-copiar-aviso={`Link de ${i.nombre} copiado`}
+                        aria-label={`Copiar link de ${i.nombre}`}
+                        title="Copiar link"
+                      >
+                        <Icono nombre="enlace" />
+                      </button>
+                      {i.respuesta !== 'pendiente' && (
+                        <button
+                          class="btn btn--sm btn--fantasma btn--icono"
+                          data-abrir="dlg-respuesta"
+                          data-valores={JSON.stringify({ nombre: i.nombre, detalle: detalle(i) })}
+                          aria-label={`Ver respuesta de ${i.nombre}`}
+                          title="Ver respuesta"
+                        >
+                          <Icono nombre="ojo" />
+                        </button>
+                      )}
+                      {!bloqueada && (
+                        <>
+                          <button
+                            class="btn btn--sm btn--fantasma btn--icono"
+                            data-abrir="dlg-invitado"
+                            data-valores={JSON.stringify({
+                              _accion: 'editar',
+                              id: i.id,
+                              nombre: i.nombre,
+                              pases: i.pases,
+                              telefono: i.telefono ? `+${i.telefono}` : '',
+                              nota: i.nota ?? '',
+                            })}
+                            aria-label={`Editar a ${i.nombre}`}
+                            title="Editar"
+                          >
+                            <Icono nombre="editar" />
+                          </button>
+                          <button
+                            class="btn btn--sm btn--fantasma btn--icono btn--texto-peligro"
+                            data-abrir="dlg-borrar"
+                            data-valores={JSON.stringify({ id: i.id, nombre: i.nombre })}
+                            aria-label={`Borrar a ${i.nombre}`}
+                            title="Borrar"
+                          >
+                            <Icono nombre="borrar" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )
+    }
+  </div>
+
+  <p class="pequeno suave" style="margin-top:1rem">
+    <a href={`/panel/${e.tokenPanel}/confirmaciones.csv`}>Descargar la lista con respuestas (CSV)</a>
+  </p>
+
+  <Dialogo id="dlg-invitado" titulo="Invitado" accion="agregar">
+    <input type="hidden" name="id" />
+    <label class="campo">
+      <span>Nombre</span>
+      <input name="nombre" required maxlength="120" placeholder="Familia López" autofocus />
+      <span class="campo__ayuda">Así aparecerá en su invitación.</span>
+    </label>
+    <div class="rejilla rejilla--2">
+      <label class="campo">
+        <span>Pases</span>
+        <input name="pases" type="number" min="1" max="50" value="1" required />
+      </label>
+      <label class="campo">
+        <span>WhatsApp</span>
+        <input name="telefono" inputmode="tel" maxlength="30" placeholder="099 123 4567" />
+      </label>
+    </div>
+    <label class="campo">
+      <span>Nota personal (opcional)</span>
+      <input name="nota" maxlength="200" placeholder="¡Te guardamos lugar en la mesa 3!" />
+    </label>
+  </Dialogo>
+
+  <Dialogo id="dlg-borrar" titulo="¿Borrar invitado?" accion="borrar" textoBoton="Borrar" peligro>
+    <input type="hidden" name="id" />
+    <p>Se borrará a <strong data-texto="nombre"></strong> y su link dejará de funcionar.</p>
+  </Dialogo>
+
+  <Dialogo id="dlg-respuesta" titulo="Respuesta">
+    <form>
+      <p><strong data-texto="nombre"></strong></p>
+      <p data-texto="detalle" style="white-space:pre-line;margin-top:.5rem"></p>
+    </form>
+  </Dialogo>
+
+  <Dialogo
+    id="dlg-importar"
+    titulo="Importar invitados"
+    descripcion="Sube tu Excel o pega la lista. Se agregan a los que ya tienes; los repetidos se ignoran."
+    accion="importar"
+    textoBoton="Importar"
+    ancho
+  >
+    <label class="campo">
+      <span>Archivo Excel o CSV</span>
+      <input type="file" accept=".xlsx,.xls,.csv,.ods" data-excel />
+      <span class="campo__ayuda">
+        Columnas: <strong>Nombre</strong> (obligatoria), Pases, Teléfono y Nota.
+        <a href="/plantilla-invitados.csv" download>Descarga la plantilla</a>.
+      </span>
+    </label>
+    <label class="campo">
+      <span>Lista <span class="suave" data-conteo></span></span>
+      <textarea
+        name="lista"
+        rows="8"
+        required
+        class="mono"
+        placeholder={'Nombre, Pases, Teléfono\nFamilia López, 4, 099 123 4567\nTía Sofía, 2'}
+        data-lista></textarea>
+      <span class="campo__ayuda">Una persona o familia por línea. Revisa antes de importar.</span>
+    </label>
+    <p class="alerta" style="margin:0">
+      Te quedan <strong class="num">{Math.max(0, e.limiteInvitados - todos.length)}</strong> lugares en tu plan.
+    </p>
+  </Dialogo>
+
+  <Dialogo
+    id="dlg-mensaje"
+    titulo="Mensaje de WhatsApp"
+    descripcion="Este texto se envía con cada link. {nombre} y {link} se reemplazan por cada invitado."
+    accion="mensaje"
+    ancho
+  >
+    <label class="campo">
+      <span>Mensaje</span>
+      <textarea name="mensaje" rows="5" maxlength="1000" required data-mensaje>{e.mensajeWhatsapp ?? MENSAJE_WHATSAPP}</textarea>
+      <span class="campo__ayuda">
+        Puedes usar <code>{'{nombre}'}</code>, <code>{'{festejado}'}</code>, <code>{'{pases}'}</code> y
+        <code>{'{link}'}</code> (obligatorio).
+      </span>
+    </label>
+    <div class="pila" style="gap:.35rem">
+      <span class="campo__etiqueta">Así se verá</span>
+      <p class="burbuja" data-vista-previa data-ejemplo={JSON.stringify({ nombre: 'Familia López', festejado: e.contenido.festejado.nombre, pases: '4 pases', link: ejemplo.link })}>
+        {ejemplo.mensaje}
+      </p>
+    </div>
+  </Dialogo>
+</Panel>
+
+<script>
+  // Buscar en la tabla sin recargar.
+  const buscar = document.querySelector<HTMLInputElement>('[data-buscar]');
+  buscar?.addEventListener('input', () => {
+    const q = buscar.value
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .trim();
+    document.querySelectorAll<HTMLElement>('[data-tabla-invitados] tbody tr').forEach((tr) => {
+      tr.hidden = !!q && !tr.dataset.nombre!.includes(q);
+    });
+  });
+
+  // Excel -> texto tabulado en el textarea: el servidor solo procesa texto.
+  const archivo = document.querySelector<HTMLInputElement>('[data-excel]');
+  const lista = document.querySelector<HTMLTextAreaElement>('[data-lista]');
+  const conteo = document.querySelector<HTMLElement>('[data-conteo]');
+  const contar = () => {
+    if (!lista || !conteo) return;
+    const n = lista.value.split('\n').filter((l) => l.trim()).length;
+    conteo.textContent = n ? `(${n} líneas)` : '';
+  };
+  lista?.addEventListener('input', contar);
+  archivo?.addEventListener('change', async () => {
+    const f = archivo.files?.[0];
+    if (!f || !lista) return;
+    const XLSX = await import('xlsx');
+    const libro = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const hoja = libro.Sheets[libro.SheetNames[0]];
+    lista.value = XLSX.utils
+      .sheet_to_csv(hoja, { FS: '\t', blankrows: false })
+      .split('\n')
+      .filter((l) => l.replace(/\t/g, '').trim())
+      .join('\n');
+    contar();
+  });
+
+  // Vista previa del mensaje mientras se escribe.
+  const mensaje = document.querySelector<HTMLTextAreaElement>('[data-mensaje]');
+  const vista = document.querySelector<HTMLElement>('[data-vista-previa]');
+  mensaje?.addEventListener('input', () => {
+    if (!vista) return;
+    const valores = JSON.parse(vista.dataset.ejemplo!) as Record<string, string>;
+    vista.textContent = mensaje.value.replace(/\{(\w+)\}/g, (todo, k: string) => valores[k] ?? todo);
+  });
+</script>
+
+<style>
+  .burbuja {
+    padding: 0.75rem 0.9rem;
+    border-radius: 0.6rem 0.6rem 0.6rem 0.15rem;
+    background: #dcf8c6;
+    color: #111b21;
+    font-size: 0.9rem;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+</style>

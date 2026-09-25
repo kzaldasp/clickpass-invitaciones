@@ -1,0 +1,90 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import Icono from '../../components/Icono.astro';
+import { eventosPorPlantilla } from '../../db/consultas';
+import { TIPOS_EVENTO } from '../../lib/config';
+import { plantillas } from '../../plantillas';
+
+const lista = plantillas();
+const usos = await eventosPorPlantilla();
+---
+
+<Admin titulo="Plantillas">
+  <header class="cabecera">
+    <div class="cabecera__texto">
+      <h1>Plantillas</h1>
+      <p class="suave">
+        Cada plantilla es código en <code>src/plantillas/</code>. Las privadas son diseños a medida; cambiarlas a públicas
+        en su manifiesto las lleva al catálogo.
+      </p>
+    </div>
+  </header>
+
+  <div class="rejilla-plantillas">
+    {
+      lista.map((m) => (
+        <article class="tarjeta plantilla">
+          <img src={m.portada} alt="" class="plantilla__portada" loading="lazy" />
+          <div class="pila" style="gap:.5rem">
+            <div class="acciones" style="justify-content:space-between">
+              <h2>{m.nombre}</h2>
+              <span class:list={['insignia', m.visibilidad === 'publica' ? 'insignia--exito' : 'insignia--info']}>
+                {m.visibilidad === 'publica' ? 'Pública' : 'Privada'}
+              </span>
+            </div>
+            <p class="suave pequeno">{m.descripcion}</p>
+            <dl class="lista-def">
+              <div><dt>Versión</dt><dd class="num">{m.version}</dd></div>
+              <div><dt>Eventos</dt><dd class="num">{usos[m.slug] ?? 0}</dd></div>
+              <div><dt>Para</dt><dd>{m.tiposEvento.map((t) => TIPOS_EVENTO[t]).join(', ')}</dd></div>
+              <div>
+                <dt>Paletas</dt>
+                <dd class="acciones" style="justify-content:flex-end;gap:.3rem">
+                  {(m.presets ?? []).map((p) => (
+                    <span class="muestra" style={`background:${p.muestra}`} title={p.nombre} />
+                  ))}
+                </dd>
+              </div>
+            </dl>
+            <a class="btn btn--sm" href={`/catalogo/${m.slug}/demo`} target="_blank" rel="noopener">
+              <Icono nombre="ojo" /> Ver demo
+            </a>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+</Admin>
+
+<style>
+  .rejilla-plantillas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: 1.25rem;
+  }
+
+  .plantilla {
+    display: grid;
+    gap: 1rem;
+    padding: 0.75rem 0.75rem 1.25rem;
+  }
+
+  .plantilla > .pila {
+    padding-inline: 0.5rem;
+  }
+
+  .plantilla__portada {
+    width: 100%;
+    aspect-ratio: 1200 / 630;
+    object-fit: cover;
+    border-radius: var(--r);
+    background: var(--superficie-2);
+  }
+
+  .muestra {
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid var(--borde);
+    border-radius: 50%;
+  }
+</style>

@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "clickpass",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  // Fotos y musica que sube el admin. Crear con: npx wrangler r2 bucket create clickpass-medios
+  "r2_buckets": [{ "binding": "MEDIOS", "bucket_name": "clickpass-medios" }]
+}

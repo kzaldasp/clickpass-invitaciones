@@ -1,0 +1,273 @@
+---
+import Panel from '../../../layouts/Panel.astro';
+import Icono from '../../../components/Icono.astro';
+import { estadisticasDe, invitadosDe } from '../../../db/consultas';
+import { etiquetaZona, fechaEnFrase, fechaLarga, fechaPartes } from '../../../lib/fechas';
+import { fechaLimite, puedeResponder } from '../../../lib/vistas';
+import { manifiestoDe } from '../../../plantillas';
+
+const e = Astro.locals.evento!;
+const base = `/panel/${e.tokenPanel}`;
+const [stats, lista] = await Promise.all([estadisticasDe(e.id), invitadosDe(e.id)]);
+const mensajes = lista
+  .filter((i) => i.mensaje)
+  .sort((a, b) => (b.respondidoEn?.getTime() ?? 0) - (a.respondidoEn?.getTime() ?? 0));
+
+const diasFaltan = Math.ceil((e.fecha.getTime() - Date.now()) / 86_400_000);
+const linkGeneral = `${Astro.url.origin}/${e.slug}`;
+const pct = (n: number) => (stats.invitados ? Math.round((n / stats.invitados) * 100) : 0);
+
+// Revisado = ya no son los textos de ejemplo con los que nacio el evento.
+const sinFestejado = ({ tipo, festejado, ...resto }: typeof e.contenido) => JSON.stringify(resto);
+const demo = manifiestoDe(e.plantilla)?.demo.contenido;
+const textosRevisados = !demo || sinFestejado(e.contenido) !== sinFestejado(demo);
+const pasos = [
+  { hecho: textosRevisados, texto: 'Revisa los textos de tu invitación', href: `${base}/invitacion` },
+  { hecho: stats.invitados > 0, texto: 'Sube tu lista de invitados', href: `${base}/invitados` },
+  { hecho: !!e.mensajeWhatsapp, texto: 'Personaliza el mensaje de WhatsApp', href: `${base}/invitados#mensaje` },
+  { hecho: stats.abiertos > 0, texto: 'Envía los links a tus invitados', href: `${base}/invitados` },
+];
+---
+
+<Panel titulo="Resumen">
+  <header class="cabecera">
+    <div class="cabecera__texto">
+      <p class="suave pequeno">{e.contenido.tipo}</p>
+      <h1>{e.contenido.festejado.nombre}</h1>
+      <p class="suave">
+        {fechaLarga(e.fecha, e.zonaHoraria)}, {fechaPartes(e.fecha, e.zonaHoraria).hora} ({etiquetaZona(e.zonaHoraria)})
+        {diasFaltan > 0 && <> · faltan <strong class="num">{diasFaltan}</strong> días</>}
+      </p>
+    </div>
+    <div class="acciones">
+      <a class="btn" href={`/${e.slug}`} target="_blank" rel="noopener"><Icono nombre="ojo" /> Ver invitación</a>
+      <a class="btn btn--primario" href={`${base}/invitados`}><Icono nombre="usuarios" /> Invitados</a>
+    </div>
+  </header>
+
+  {
+    e.estado === 'borrador' && (
+      <p class="alerta alerta--aviso" style="margin-bottom:1.5rem">
+        Tu invitación está en preparación. Ya puedes editar los textos, subir tu lista y ver cómo queda; los links de tus
+        invitados se activarán cuando la publiquemos.
+      </p>
+    )
+  }
+  {
+    e.estado === 'finalizado' && (
+      <p class="alerta" style="margin-bottom:1.5rem">
+        Este evento ya finalizó. La lista de invitados se borró; tu invitación sigue disponible como recuerdo.
+      </p>
+    )
+  }
+
+  <div class="dos-columnas">
+    <div class="pila pila--lg">
+      <div class="stats">
+        <div class="stat">
+          <span class="stat__valor num">{stats.asisten}</span>
+          <span class="stat__etiqueta">Confirmaron · {stats.pasesConfirmados} personas</span>
+        </div>
+        <div class="stat">
+          <span class="stat__valor num">{stats.noAsisten}</span>
+          <span class="stat__etiqueta">No asistirán</span>
+        </div>
+        <div class="stat">
+          <span class="stat__valor num">{stats.pendientes}</span>
+          <span class="stat__etiqueta">Sin responder</span>
+        </div>
+        <div class="stat">
+          <span class="stat__valor num">{stats.invitados - stats.abiertos}</span>
+          <span class="stat__etiqueta">No han abierto</span>
+        </div>
+      </div>
+
+      {
+        stats.invitados > 0 && (
+          <section class="tarjeta pila">
+            <h2>Respuestas</h2>
+            <div class="barra-apilada" role="img" aria-label={`${pct(stats.asisten)}% asisten, ${pct(stats.noAsisten)}% no asisten`}>
+              <span class="si" style={`width:${pct(stats.asisten)}%`} />
+              <span class="no" style={`width:${pct(stats.noAsisten)}%`} />
+            </div>
+            <div class="acciones pequeno suave" style="gap:1.25rem">
+              <span><i class="punto si" /> Asisten {pct(stats.asisten)}%</span>
+              <span><i class="punto no" /> No asisten {pct(stats.noAsisten)}%</span>
+              <span><i class="punto" /> Sin responder {pct(stats.pendientes)}%</span>
+            </div>
+            <p class="pequeno suave">
+              {stats.invitados} de {e.limiteInvitados} invitados de tu plan · {stats.pases} pases entregados.
+            </p>
+          </section>
+        )
+      }
+
+      <section class="tarjeta pila">
+        <h2>Mensajes de tus invitados</h2>
+        {
+          mensajes.length === 0 ? (
+            <p class="suave pequeno">Aquí aparecerán los mensajes que te dejen al confirmar.</p>
+          ) : (
+            <ul class="mensajes">
+              {mensajes.map((i) => (
+                <li>
+                  <p>“{i.mensaje}”</p>
+                  <p class="pequeno suave">
+                    — {i.nombre}
+                    {i.respuesta === 'asiste' ? ' · asiste' : i.respuesta === 'no_asiste' ? ' · no asiste' : ''}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </section>
+    </div>
+
+    <aside class="pila pila--lg">
+      {
+        e.estado !== 'finalizado' && (
+          <section class="tarjeta pila">
+            <h2>Pasos</h2>
+            <ol class="pasos">
+              {pasos.map((p) => (
+                <li data-hecho={p.hecho ? '' : undefined}>
+                  <span class="pasos__marca">{p.hecho && <Icono nombre="check" />}</span>
+                  <a href={p.href}>{p.texto}</a>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )
+      }
+
+      <section class="tarjeta pila">
+        <h2>Tu invitación</h2>
+        <div class="pila" style="gap:.4rem">
+          <span class="campo__etiqueta">Link general</span>
+          <div class="copiar">
+            <code>{linkGeneral}</code>
+            <button class="btn btn--sm" data-copiar={linkGeneral}><Icono nombre="copiar" /></button>
+          </div>
+          <span class="campo__ayuda">Para redes o grupos. Para confirmar, cada invitado necesita su link personal.</span>
+        </div>
+        <dl class="lista-def">
+          <div>
+            <dt>Confirmar hasta</dt>
+            <dd>{fechaEnFrase(fechaLimite(e), e.zonaHoraria)}</dd>
+          </div>
+          <div>
+            <dt>Confirmaciones</dt>
+            <dd>{puedeResponder(e) ? 'Abiertas' : e.estado === 'borrador' ? 'Se abren al publicar' : 'Cerradas'}</dd>
+          </div>
+        </dl>
+        <a class="btn btn--bloque" href={`${base}/confirmaciones.csv`}><Icono nombre="descargar" /> Descargar lista (CSV)</a>
+      </section>
+    </aside>
+  </div>
+</Panel>
+
+<style>
+  .barra-apilada {
+    display: flex;
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--superficie-2);
+  }
+
+  .si {
+    background: var(--acento);
+  }
+
+  .no {
+    background: var(--peligro);
+    opacity: 0.75;
+  }
+
+  .punto {
+    display: inline-block;
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-right: 0.3rem;
+    border-radius: 50%;
+    background: var(--superficie-2);
+    border: 1px solid var(--borde-fuerte);
+  }
+
+  .punto.si,
+  .punto.no {
+    border: 0;
+  }
+
+  .punto.si {
+    background: var(--acento);
+  }
+
+  .punto.no {
+    background: var(--peligro);
+  }
+
+  .mensajes {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .mensajes li {
+    display: grid;
+    gap: 0.25rem;
+    padding-left: 0.9rem;
+    border-left: 2px solid var(--acento-suave);
+  }
+
+  .mensajes li > p:first-child {
+    font-family: var(--f-titulo);
+    font-size: 1.05rem;
+    font-style: italic;
+  }
+
+  .pasos {
+    display: grid;
+    gap: 0.7rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: paso;
+  }
+
+  .pasos li {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.9rem;
+  }
+
+  .pasos__marca {
+    display: grid;
+    place-items: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    flex: none;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 50%;
+    color: var(--sobre-acento);
+  }
+
+  .pasos__marca :global(svg) {
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+
+  .pasos li[data-hecho] .pasos__marca {
+    border-color: var(--acento);
+    background: var(--acento);
+  }
+
+  .pasos li[data-hecho] a {
+    color: var(--texto-suave);
+    text-decoration: line-through;
+  }
+</style>

@@ -1,0 +1,39 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import FormEvento from '../../../components/admin/FormEvento.astro';
+import { clientes as listarClientes } from '../../../db/consultas';
+import { crearEvento, valoresVacios, type ValoresEvento } from '../../../lib/acciones/eventos';
+import { ponerAviso } from '../../../lib/aviso';
+
+let valores: ValoresEvento = valoresVacios();
+let error = '';
+
+// Llegar desde la ficha de un cliente lo deja preseleccionado.
+const preseleccion = Astro.url.searchParams.get('cliente');
+if (preseleccion) valores.clienteId = preseleccion;
+
+if (Astro.request.method === 'POST') {
+  const r = await crearEvento(await Astro.request.formData());
+  if (r.ok) {
+    ponerAviso(Astro.cookies, 'Evento creado en borrador. Revisa los textos y envía el panel al cliente.');
+    return Astro.redirect(`/admin/eventos/${r.valor.id}`);
+  }
+  valores = r.valores;
+  error = r.error;
+}
+
+const clientes = (await listarClientes()).map(({ cliente }) => ({ id: cliente.id, nombre: cliente.nombre }));
+---
+
+<Admin titulo="Nuevo evento" angosto>
+  <header class="cabecera">
+    <div class="cabecera__texto">
+      <nav class="migas"><a href="/admin">Eventos</a> / <span>Nuevo</span></nav>
+      <h1>Nuevo evento</h1>
+    </div>
+  </header>
+
+  {error && <p class="alerta alerta--peligro" style="margin-bottom:1.5rem">{error}</p>}
+
+  <FormEvento modo="nuevo" valores={valores} clientes={clientes} cancelar="/admin" />
+</Admin>

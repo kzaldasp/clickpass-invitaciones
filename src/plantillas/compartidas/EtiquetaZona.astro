@@ -1,0 +1,31 @@
+---
+/**
+ * "(hora de Ecuador)" junto a una hora, visible SOLO si quien abre la
+ * invitacion esta en otra zona con distinto desfase. Sin JS no aparece.
+ */
+import { etiquetaZona } from '../../lib/fechas';
+
+interface Props {
+  zona: string;
+  class?: string;
+}
+
+const { zona, class: clase } = Astro.props;
+---
+
+<span class:list={['etiqueta-zona', clase]} data-zona-evento={zona} hidden>({etiquetaZona(zona)})</span>
+
+<script>
+  const desfase = (zona: string) => {
+    const ahora = new Date();
+    const enZona = new Date(ahora.toLocaleString('en-US', { timeZone: zona }));
+    const enUTC = new Date(ahora.toLocaleString('en-US', { timeZone: 'UTC' }));
+    return enZona.getTime() - enUTC.getTime();
+  };
+
+  const local = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  document.querySelectorAll<HTMLElement>('[data-zona-evento]').forEach((el) => {
+    const zona = el.dataset.zonaEvento!;
+    el.hidden = zona === local || desfase(zona) === desfase(local);
+  });
+</script>

@@ -1,0 +1,68 @@
+---
+/**
+ * Documento base de la plataforma (catalogo, admin, panel, avisos). Carga el
+ * sistema de diseno, fija el modo claro/oscuro antes del primer pintado y
+ * muestra el aviso flash como toast.
+ */
+import '../styles/plataforma.css';
+import type { Aviso } from '../lib/aviso';
+
+interface Props {
+  titulo: string;
+  descripcion?: string;
+  /** Paginas privadas: no las indexa nadie. */
+  privada?: boolean;
+  aviso?: Aviso;
+}
+
+const { titulo, descripcion, privada = true, aviso = Astro.locals.aviso } = Astro.props;
+const tituloCompleto = titulo === 'ClickPass' ? titulo : `${titulo} · ClickPass`;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{tituloCompleto}</title>
+    {descripcion && <meta name="description" content={descripcion} />}
+    {privada && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#141a16" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"
+    />
+
+    {/* El modo elegido se aplica antes de pintar: sin parpadeo claro -> oscuro. */}
+    <script is:inline>
+      try {
+        const modo = localStorage.getItem('cp-modo');
+        if (modo === 'light' || modo === 'dark') document.documentElement.dataset.theme = modo;
+      } catch {}
+    </script>
+    <slot name="head" />
+  </head>
+
+  <body>
+    <slot />
+
+    <div class="toasts" aria-live="polite" data-toasts>
+      {
+        aviso && (
+          <div class:list={['toast', `toast--${aviso.tipo}`]} role="status">
+            {aviso.texto}
+          </div>
+        )
+      }
+    </div>
+
+    <script>
+      import { iniciarPlataforma } from '../lib/cliente/plataforma';
+      iniciarPlataforma();
+    </script>
+  </body>
+</html>

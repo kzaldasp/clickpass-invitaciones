@@ -25,6 +25,47 @@ export const PAISES = [
   { codigo: 'US', nombre: 'Estados Unidos', zona: 'America/New_York', prefijo: '1', etiqueta: 'hora del este de EE. UU.' },
 ] as const;
 
+/** Tipos de evento: filtran el catalogo y ordenan las plantillas. */
+export const TIPOS_EVENTO = {
+  boda: 'Boda',
+  xv: 'XV años',
+  cumpleanos: 'Cumpleaños',
+  infantil: 'Fiesta infantil',
+  bautizo: 'Bautizo',
+  baby_shower: 'Baby shower',
+  graduacion: 'Graduación',
+  aniversario: 'Aniversario',
+  corporativo: 'Corporativo',
+} as const;
+
+export type TipoEvento = keyof typeof TIPOS_EVENTO;
+
+/**
+ * Mensaje de WhatsApp por defecto. Se rellenan por invitado:
+ * {nombre}, {festejado}, {pases} y {link}.
+ */
+export const MENSAJE_WHATSAPP = '¡Hola {nombre}! Tienes una invitación de {festejado} ✨\nÁbrela aquí y confirma tu asistencia: {link}';
+
+/** Slugs que no puede tomar un evento: son rutas de la plataforma. */
+export const SLUGS_RESERVADOS = [
+  'admin',
+  'panel',
+  'catalogo',
+  'api',
+  'entrar',
+  'salir',
+  'aviso',
+  'medios',
+  'ilustraciones',
+  'audio',
+  'favicon.ico',
+  'favicon.svg',
+  'robots.txt',
+  '_actions',
+  '_astro',
+  '_server-islands',
+];
+
 /** Zonas seleccionables. Incluye las de EE. UU. y Mexico que no son la principal. */
 export const ZONAS = [
   ...new Set([

@@ -1,0 +1,52 @@
+---
+/**
+ * Panel del cliente. Se entra con el link privado /panel/{token}; el
+ * middleware ya resolvio el evento. Un admin usa este mismo panel para llenar
+ * los datos por el cliente.
+ */
+import Shell, { type ItemMenu } from './Shell.astro';
+import Icono from '../components/Icono.astro';
+
+interface Props {
+  titulo: string;
+  angosto?: boolean;
+}
+
+const { titulo, angosto } = Astro.props;
+const e = Astro.locals.evento!;
+const base = `/panel/${e.tokenPanel}`;
+const usuario = Astro.locals.usuario;
+const esAdmin = usuario?.rol === 'admin';
+
+const menu: ItemMenu[] = [
+  { href: base, etiqueta: 'Resumen', icono: 'inicio', exacto: true },
+  { href: `${base}/invitacion`, etiqueta: 'Mi invitación', icono: 'invitacion' },
+  { href: `${base}/invitados`, etiqueta: 'Invitados', icono: 'usuarios' },
+  { href: `${base}/entrada`, etiqueta: 'Entrada con QR', icono: 'qr' },
+];
+if (usuario && !esAdmin) menu.push({ href: '/panel', etiqueta: 'Mis eventos', icono: 'calendario', grupo: 'Cuenta' });
+---
+
+<Shell
+  titulo={`${titulo} · ${e.contenido.festejado.nombre}`}
+  subtituloMarca={e.contenido.festejado.nombre}
+  inicio={base}
+  menu={menu}
+  usuario={esAdmin ? `Admin · ${usuario?.email}` : undefined}
+  salir={usuario ? (esAdmin ? '/admin/salir' : '/entrar/salir') : undefined}
+  angosto={angosto}
+>
+  <Fragment slot="pie-lateral">
+    <a class="lateral__enlace" href={`/${e.slug}`} target="_blank" rel="noopener">
+      <Icono nombre="ojo" /> Ver invitación
+    </a>
+    {
+      esAdmin && (
+        <a class="lateral__enlace" href={`/admin/eventos/${e.id}`}>
+          <Icono nombre="atras" /> Volver al admin
+        </a>
+      )
+    }
+  </Fragment>
+  <slot />
+</Shell>

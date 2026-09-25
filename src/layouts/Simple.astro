@@ -1,0 +1,56 @@
+---
+/**
+ * Pagina centrada, sin menu: avisos de invitacion, 404, login.
+ */
+import Base from './Base.astro';
+
+interface Props {
+  titulo: string;
+  privada?: boolean;
+}
+
+const { titulo, privada = true } = Astro.props;
+---
+
+<Base titulo={titulo} privada={privada}>
+  <main class="simple">
+    <a href="/catalogo" class="simple__marca">ClickPass</a>
+    <div class="simple__caja">
+      <slot />
+    </div>
+  </main>
+</Base>
+
+<style>
+  .simple {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 2rem;
+    min-height: 100dvh;
+    padding: 2rem 1rem;
+  }
+
+  .simple__marca {
+    font-family: var(--f-titulo);
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--texto);
+    text-decoration: none;
+  }
+
+  .simple__caja {
+    display: grid;
+    gap: 1rem;
+    width: min(26rem, 100%);
+    padding: 2rem 1.75rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--r-lg);
+    background: var(--superficie);
+    text-align: center;
+  }
+
+  .simple__caja :global(form) {
+    text-align: left;
+  }
+</style>

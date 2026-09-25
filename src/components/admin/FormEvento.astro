@@ -1,0 +1,332 @@
+---
+/**
+ * Formulario largo de evento (pagina propia, no popup). Lo usan "nuevo" y
+ * "editar". Sin JS funciona completo; el JS solo sugiere el link, la zona y el
+ * prefijo, y agrega filas de preguntas.
+ */
+import Icono from '../Icono.astro';
+import { PAISES, TIPOS_EVENTO, ZONAS } from '../../lib/config';
+import { etiquetaZona } from '../../lib/fechas';
+import type { ValoresEvento } from '../../lib/acciones/eventos';
+import { plantillas } from '../../plantillas';
+
+interface Props {
+  modo: 'nuevo' | 'editar';
+  valores: ValoresEvento;
+  clientes: { id: string; nombre: string }[];
+  cancelar: string;
+}
+
+const { modo, valores: v, clientes, cancelar } = Astro.props;
+const lista = plantillas();
+const presets = lista.flatMap((m) => (m.presets ?? []).map((p) => ({ ...p, plantilla: m.slug })));
+const filasPreguntas = [...v.preguntas, { id: '', etiqueta: '', tipo: 'texto', opciones: '', obligatoria: false }];
+const tiposSugeridos = Object.values(TIPOS_EVENTO);
+---
+
+<form method="post" class="formulario" data-form-evento={modo}>
+  <input type="hidden" name="_accion" value={modo === 'nuevo' ? 'crear' : 'guardar'} />
+
+  <section class="seccion-form">
+    <div class="seccion-form__cabecera">
+      <h2>Cliente</h2>
+      <p class="suave pequeno">Quién compra la invitación. Puedes crearlo aquí mismo.</p>
+    </div>
+    <div class="rejilla rejilla--2">
+      <label class="campo ancho-completo">
+        <span>Cliente</span>
+        <select name="clienteId" data-cliente>
+          {modo === 'nuevo' && <option value="nuevo">+ Cliente nuevo</option>}
+          {clientes.map((c) => <option value={c.id} selected={c.id === v.clienteId}>{c.nombre}</option>)}
+        </select>
+      </label>
+      {
+        modo === 'nuevo' && (
+          <div class="rejilla rejilla--3 ancho-completo" data-cliente-nuevo>
+            <label class="campo">
+              <span>Nombre</span>
+              <input name="clienteNombre" value={v.clienteNombre} placeholder="Lucía Ramírez" />
+            </label>
+            <label class="campo">
+              <span>Correo (opcional)</span>
+              <input name="clienteEmail" type="email" value={v.clienteEmail} placeholder="lucia@correo.com" />
+            </label>
+            <label class="campo">
+              <span>WhatsApp (opcional)</span>
+              <input name="clienteTelefono" inputmode="tel" value={v.clienteTelefono} placeholder="099 123 4567" />
+            </label>
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="seccion-form">
+    <div class="seccion-form__cabecera">
+      <h2>Evento</h2>
+      <p class="suave pequeno">
+        {modo === 'nuevo'
+          ? 'La invitación nace con los textos de ejemplo de la plantilla; el cliente los reemplaza desde su panel.'
+          : 'Plantilla, paleta y link. Los textos se editan desde el panel.'}
+      </p>
+    </div>
+    <div class="rejilla rejilla--2">
+      {
+        modo === 'nuevo' && (
+          <>
+            <label class="campo">
+              <span>Tipo de evento</span>
+              <input name="tipo" value={v.tipo} required list="tipos-evento" placeholder="XV años, Nuestra boda…" />
+              <datalist id="tipos-evento">
+                {tiposSugeridos.map((t) => <option value={t} />)}
+              </datalist>
+            </label>
+            <label class="campo">
+              <span>Festejado(s)</span>
+              <input name="festejado" value={v.festejado} required placeholder="Ana y Luis" data-festejado />
+            </label>
+          </>
+        )
+      }
+      <label class="campo">
+        <span>Plantilla</span>
+        <select name="plantilla" data-plantilla>
+          {
+            lista.map((m) => (
+              <option value={m.slug} selected={m.slug === v.plantilla}>
+                {m.nombre}
+                {m.visibilidad === 'privada' ? ' (privada)' : ''}
+              </option>
+            ))
+          }
+        </select>
+      </label>
+      <label class="campo">
+        <span>Paleta</span>
+        <select name="preset" data-preset>
+          <option value="">Original de la plantilla</option>
+          {
+            presets.map((p) => (
+              <option value={p.id} data-de={p.plantilla} selected={p.id === v.preset}>
+                {p.nombre}
+              </option>
+            ))
+          }
+        </select>
+      </label>
+      <label class="campo ancho-completo">
+        <span>Link del evento</span>
+        <div class="copiar" style="background:var(--superficie)">
+          <code class="tenue" style="flex:none;padding-right:0">/</code>
+          <input
+            name="slug"
+            value={v.slug}
+            required
+            pattern="[a-z0-9](?:[a-z0-9\-]{0,58}[a-z0-9])?"
+            placeholder="ana-y-luis"
+            style="border:0;min-height:auto;box-shadow:none;background:transparent"
+            data-slug
+          />
+        </div>
+        <span class="campo__ayuda">Minúsculas, números y guiones. Cambiarlo rompe los links ya enviados.</span>
+      </label>
+    </div>
+  </section>
+
+  <section class="seccion-form">
+    <div class="seccion-form__cabecera">
+      <h2>Fecha y lugar</h2>
+      <p class="suave pequeno">La hora se escribe en la hora local del evento, no en la tuya.</p>
+    </div>
+    <div class="rejilla rejilla--2">
+      <label class="campo">
+        <span>País del evento</span>
+        <select name="pais" data-pais>
+          {
+            PAISES.map((p) => (
+              <option value={p.codigo} data-zona={p.zona} data-prefijo={p.prefijo} selected={p.codigo === v.pais}>
+                {p.nombre}
+              </option>
+            ))
+          }
+        </select>
+      </label>
+      <label class="campo">
+        <span>Zona horaria</span>
+        <select name="zonaHoraria" data-zona>
+          {ZONAS.map((z) => <option value={z} selected={z === v.zonaHoraria}>{z} · {etiquetaZona(z)}</option>)}
+        </select>
+      </label>
+      <label class="campo">
+        <span>Fecha y hora</span>
+        <input type="datetime-local" name="fechaLocal" value={v.fechaLocal} required />
+      </label>
+      <label class="campo">
+        <span>Prefijo telefónico</span>
+        <input name="prefijoTelefono" value={v.prefijoTelefono} inputmode="numeric" required data-prefijo />
+        <span class="campo__ayuda">Se antepone a los teléfonos del Excel que vengan sin código de país.</span>
+      </label>
+    </div>
+  </section>
+
+  <section class="seccion-form">
+    <div class="seccion-form__cabecera">
+      <h2>Plan</h2>
+      <p class="suave pequeno">Lo que pagó el cliente: tope de invitados y precio.</p>
+    </div>
+    <div class="rejilla rejilla--3">
+      <label class="campo">
+        <span>Límite de invitados</span>
+        <input type="number" name="limiteInvitados" min="1" max="5000" value={v.limiteInvitados} required />
+        <span class="campo__ayuda">Cada invitado es un link.</span>
+      </label>
+      <label class="campo">
+        <span>Precio</span>
+        <input name="precio" inputmode="decimal" value={v.precio} placeholder="45.00" />
+      </label>
+      <label class="campo">
+        <span>Moneda</span>
+        <select name="moneda">
+          {['USD', 'EUR', 'MXN', 'COP', 'PEN'].map((m) => <option selected={m === v.moneda}>{m}</option>)}
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section class="seccion-form">
+    <div class="seccion-form__cabecera">
+      <h2>Confirmación</h2>
+      <p class="suave pequeno">Qué pregunta el formulario. La plantilla solo decide cómo se ve.</p>
+    </div>
+    <div class="pila">
+      <label class="check">
+        <input type="checkbox" name="pedirPases" checked={v.pedirPases} />
+        <span>Preguntar cuántos pases usará <span class="suave pequeno">(si no, confirmar usa todos sus pases)</span></span>
+      </label>
+      <label class="check">
+        <input type="checkbox" name="pedirMensaje" checked={v.pedirMensaje} />
+        <span>Permitir un mensaje para los festejados</span>
+      </label>
+      <label class="campo" style="max-width:20rem">
+        <span>Fecha límite para confirmar</span>
+        <input type="datetime-local" name="fechaLimiteLocal" value={v.fechaLimiteLocal} />
+        <span class="campo__ayuda">Vacío: se puede responder hasta que empiece el evento.</span>
+      </label>
+
+      <div class="pila" style="gap:.6rem">
+        <span class="campo__etiqueta">Preguntas extra</span>
+        <div class="pila" style="gap:.6rem" data-preguntas>
+          {
+            filasPreguntas.map((p, i) => (
+              <div class="tarjeta pregunta" data-pregunta>
+                <input type="hidden" name={`preguntas.${i}.id`} value={p.id} />
+                <div class="rejilla rejilla--3">
+                  <label class="campo">
+                    <span>Pregunta</span>
+                    <input name={`preguntas.${i}.etiqueta`} value={p.etiqueta} placeholder="¿Alguna alergia?" />
+                  </label>
+                  <label class="campo">
+                    <span>Tipo</span>
+                    <select name={`preguntas.${i}.tipo`}>
+                      <option value="texto" selected={p.tipo === 'texto'}>Texto libre</option>
+                      <option value="si_no" selected={p.tipo === 'si_no'}>Sí / No</option>
+                      <option value="opcion" selected={p.tipo === 'opcion'}>Elegir una opción</option>
+                    </select>
+                  </label>
+                  <label class="campo">
+                    <span>Opciones</span>
+                    <input name={`preguntas.${i}.opciones`} value={p.opciones} placeholder="Carne, Pescado, Vegetariano" />
+                  </label>
+                </div>
+                <label class="check pequeno" style="margin-top:.6rem">
+                  <input type="checkbox" name={`preguntas.${i}.obligatoria`} checked={p.obligatoria} />
+                  <span>Obligatoria si asiste</span>
+                </label>
+              </div>
+            ))
+          }
+        </div>
+        <div>
+          <button type="button" class="btn btn--sm" data-agregar-pregunta>
+            <Icono nombre="mas" /> Otra pregunta
+          </button>
+        </div>
+        <p class="campo__ayuda">Para quitar una pregunta, deja vacío su texto.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="barra-guardar">
+    <a href={cancelar} class="btn">Cancelar</a>
+    <button type="submit" class="btn btn--primario">{modo === 'nuevo' ? 'Crear evento' : 'Guardar cambios'}</button>
+  </div>
+</form>
+
+<script>
+  import { slugificar } from '../../lib/texto';
+
+  const form = document.querySelector<HTMLFormElement>('[data-form-evento]');
+  if (form) {
+    const cliente = form.querySelector<HTMLSelectElement>('[data-cliente]');
+    const nuevo = form.querySelector<HTMLElement>('[data-cliente-nuevo]');
+    const syncCliente = () => {
+      if (nuevo && cliente) nuevo.hidden = cliente.value !== 'nuevo';
+    };
+    cliente?.addEventListener('change', syncCliente);
+    syncCliente();
+
+    // Sugerir el link desde el festejado mientras nadie lo haya tocado.
+    const slug = form.querySelector<HTMLInputElement>('[data-slug]')!;
+    const festejado = form.querySelector<HTMLInputElement>('[data-festejado]');
+    let slugTocado = !!slug.value;
+    slug.addEventListener('input', () => (slugTocado = true));
+    festejado?.addEventListener('input', () => {
+      if (!slugTocado) slug.value = slugificar(festejado.value);
+    });
+
+    // El pais sugiere zona y prefijo.
+    const pais = form.querySelector<HTMLSelectElement>('[data-pais]')!;
+    pais.addEventListener('change', () => {
+      const op = pais.selectedOptions[0];
+      form.querySelector<HTMLSelectElement>('[data-zona]')!.value = op.dataset.zona!;
+      form.querySelector<HTMLInputElement>('[data-prefijo]')!.value = op.dataset.prefijo!;
+    });
+
+    // Paletas de la plantilla elegida.
+    const plantilla = form.querySelector<HTMLSelectElement>('[data-plantilla]')!;
+    const preset = form.querySelector<HTMLSelectElement>('[data-preset]')!;
+    const syncPresets = () => {
+      [...preset.options].forEach((o) => {
+        if (!o.dataset.de) return;
+        o.hidden = o.dataset.de !== plantilla.value;
+        if (o.hidden && o.selected) preset.value = '';
+      });
+    };
+    plantilla.addEventListener('change', syncPresets);
+    syncPresets();
+
+    // Agregar otra fila de pregunta clonando la ultima.
+    const contenedor = form.querySelector<HTMLElement>('[data-preguntas]')!;
+    form.querySelector('[data-agregar-pregunta]')?.addEventListener('click', () => {
+      const filas = contenedor.querySelectorAll('[data-pregunta]');
+      const nueva = filas[filas.length - 1].cloneNode(true) as HTMLElement;
+      const indice = filas.length;
+      nueva.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[name]').forEach((campo) => {
+        campo.name = campo.name.replace(/^preguntas\.\d+\./, `preguntas.${indice}.`);
+        if (campo instanceof HTMLInputElement && campo.type === 'checkbox') campo.checked = false;
+        else if (campo instanceof HTMLSelectElement) campo.selectedIndex = 0;
+        else campo.value = '';
+      });
+      contenedor.append(nueva);
+      nueva.querySelector<HTMLInputElement>('input[name$=".etiqueta"]')?.focus();
+    });
+  }
+</script>
+
+<style>
+  .pregunta {
+    padding: 1rem;
+    background: var(--superficie-2);
+    border-color: transparent;
+  }
+</style>

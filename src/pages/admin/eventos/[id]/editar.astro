@@ -1,0 +1,48 @@
+---
+import Admin from '../../../../layouts/Admin.astro';
+import FormEvento from '../../../../components/admin/FormEvento.astro';
+import { clientes as listarClientes, eventoPorId, totalInvitados } from '../../../../db/consultas';
+import { actualizarEvento, valoresDe, type ValoresEvento } from '../../../../lib/acciones/eventos';
+import { ponerAviso } from '../../../../lib/aviso';
+
+const e = await eventoPorId(Astro.params.id!);
+if (!e) return Astro.rewrite('/404');
+
+let valores: ValoresEvento = valoresDe(e);
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const r = await actualizarEvento(e, await Astro.request.formData());
+  if (r.ok) {
+    const n = await totalInvitados(e.id);
+    ponerAviso(
+      Astro.cookies,
+      n > r.valor.limiteInvitados
+        ? `Guardado. Ojo: ya hay ${n} invitados y el límite es ${r.valor.limiteInvitados}; no se podrán agregar más.`
+        : 'Cambios guardados.',
+      n > r.valor.limiteInvitados ? 'info' : 'exito',
+    );
+    return Astro.redirect(`/admin/eventos/${e.id}`);
+  }
+  valores = r.valores;
+  error = r.error;
+}
+
+const clientes = (await listarClientes()).map(({ cliente }) => ({ id: cliente.id, nombre: cliente.nombre }));
+---
+
+<Admin titulo={`Configurar · ${e.contenido.festejado.nombre}`} angosto>
+  <header class="cabecera">
+    <div class="cabecera__texto">
+      <nav class="migas">
+        <a href="/admin">Eventos</a> / <a href={`/admin/eventos/${e.id}`}>{e.contenido.festejado.nombre}</a> /
+        <span>Configurar</span>
+      </nav>
+      <h1>Configurar evento</h1>
+    </div>
+  </header>
+
+  {error && <p class="alerta alerta--peligro" style="margin-bottom:1.5rem">{error}</p>}
+
+  <FormEvento modo="editar" valores={valores} clientes={clientes} cancelar={`/admin/eventos/${e.id}`} />
+</Admin>

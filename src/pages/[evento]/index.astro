@@ -1,0 +1,16 @@
+---
+/**
+ * Link general: /ana-y-luis. Muestra la invitacion sin nombre y sin
+ * formulario (para confirmar hace falta el link personal). En borrador sirve de
+ * vista previa y lleva la cinta de aviso. Finalizado sigue vivo como recuerdo.
+ */
+import { eventoPorSlug } from '../../db/consultas';
+import { componenteDe } from '../../plantillas/componentes';
+import { confirmacionVista, eventoVista } from '../../lib/vistas';
+
+const e = await eventoPorSlug(Astro.params.evento!);
+const Plantilla = e && componenteDe(e.plantilla, e.plantillaVersion);
+if (!e || !Plantilla) return Astro.rewrite('/404');
+---
+
+<Plantilla evento={eventoVista(e)} confirmacion={confirmacionVista(e)} />

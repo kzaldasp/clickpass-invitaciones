@@ -1,0 +1,30 @@
+---
+import Shell, { type ItemMenu } from './Shell.astro';
+
+interface Props {
+  titulo: string;
+  angosto?: boolean;
+}
+
+const { titulo, angosto } = Astro.props;
+const usuario = Astro.locals.usuario;
+
+const menu: ItemMenu[] = [
+  { href: '/admin', etiqueta: 'Eventos', icono: 'calendario', exacto: true, tambien: ['/admin/eventos'] },
+  { href: '/admin/clientes', etiqueta: 'Clientes', icono: 'usuarios' },
+  { href: '/admin/plantillas', etiqueta: 'Plantillas', icono: 'plantillas' },
+  { href: '/catalogo', etiqueta: 'Catálogo público', icono: 'catalogo', grupo: 'Sitio' },
+];
+---
+
+<Shell
+  titulo={titulo}
+  subtituloMarca="Administración"
+  inicio="/admin"
+  menu={menu}
+  usuario={usuario?.email ?? undefined}
+  salir="/admin/salir"
+  angosto={angosto}
+>
+  <slot />
+</Shell>

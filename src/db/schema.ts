@@ -33,6 +33,8 @@ export const usuarios = sqliteTable('usuarios', {
   /** Opcional: un cliente puede entrar solo con el link privado de su panel. */
   email: text('email').unique(),
   telefono: text('telefono'),
+  /** Solo admins: PBKDF2 (src/lib/claves.ts). Los clientes entran por link o codigo. */
+  claveHash: text('clave_hash'),
   creadoEn: creadoEn(),
 });
 
@@ -78,6 +80,8 @@ export const eventos = sqliteTable(
     plantilla: text('plantilla').notNull(),
     /** Version de la plantilla con la que se creo. Un cambio incompatible sube la version; este evento no se entera. */
     plantillaVersion: integer('plantilla_version').notNull().default(1),
+    /** Paleta alternativa del manifiesto de la plantilla. Null -> la original. */
+    preset: text('preset'),
 
     /**
      * borrador   -> el cliente edita y ve vista previa; los links de invitado aun no abren.
@@ -157,6 +161,9 @@ export const invitados = sqliteTable(
     mensaje: text('mensaje'),
     respuestasExtra: text('respuestas_extra', { mode: 'json' }).$type<RespuestasExtra>(),
     respondidoEn: integer('respondido_en', { mode: 'timestamp' }),
+
+    /** Check-in con el QR del pase en la entrada. */
+    ingresadoEn: integer('ingresado_en', { mode: 'timestamp' }),
 
     creadoEn: creadoEn(),
   },

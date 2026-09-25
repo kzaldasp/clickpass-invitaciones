@@ -1,0 +1,14 @@
+---
+import Simple from '../../layouts/Simple.astro';
+
+// Llega por rewrite desde un link personal de un evento aun en borrador.
+const nombre = Astro.url.searchParams.get('nombre')?.slice(0, 120);
+---
+
+<Simple titulo="Invitación en preparación">
+  <h1>Tu invitación está en camino</h1>
+  <p class="suave">
+    {nombre ? `Hola ${nombre}, los` : 'Los'} anfitriones aún están preparando esta invitación. Vuelve a abrir este mismo link
+    en unos días.
+  </p>
+</Simple>

@@ -1,0 +1,138 @@
+---
+import EtiquetaZona from '../../compartidas/EtiquetaZona.astro';
+
+/**
+ * Cuenta regresiva al instante exacto del evento.
+ *
+ * Recibe el timestamp absoluto en ISO con offset, asi que da igual la zona
+ * horaria del telefono que abre la invitacion: todos ven el mismo momento.
+ */
+interface Props {
+  fechaISO: string;
+  fechaTexto: string;
+  /** Zona del evento: si el invitado esta en otra, se aclara junto a la fecha. */
+  zona: string;
+}
+
+const { fechaISO, fechaTexto, zona } = Astro.props;
+
+const unidades = [
+  { clave: 'dias', etiqueta: 'Días' },
+  { clave: 'horas', etiqueta: 'Horas' },
+  { clave: 'minutos', etiqueta: 'Min' },
+  { clave: 'segundos', etiqueta: 'Seg' },
+];
+---
+
+<section class="escena">
+  <div class="contenedor">
+    <p class="cuenta__fecha" data-anim="sube">{fechaTexto} <EtiquetaZona zona={zona} /></p>
+
+    <div class="cuenta" data-cuenta data-fecha={fechaISO} data-anim="escala">
+      {
+        unidades.map(({ clave, etiqueta }) => (
+          <div class="cuenta__caja">
+            <span class="cuenta__numero" data-unidad={clave}>--</span>
+            <span class="cuenta__etiqueta">{etiqueta}</span>
+          </div>
+        ))
+      }
+    </div>
+
+    <p class="cuenta__agotada" data-agotada hidden>¡Hoy es el gran día!</p>
+  </div>
+</section>
+
+<script>
+  const bloque = document.querySelector<HTMLElement>('[data-cuenta]');
+
+  if (bloque?.dataset.fecha) {
+    const objetivo = new Date(bloque.dataset.fecha).getTime();
+    const agotada = document.querySelector<HTMLElement>('[data-agotada]');
+
+    const campos = {
+      dias: bloque.querySelector<HTMLElement>('[data-unidad="dias"]'),
+      horas: bloque.querySelector<HTMLElement>('[data-unidad="horas"]'),
+      minutos: bloque.querySelector<HTMLElement>('[data-unidad="minutos"]'),
+      segundos: bloque.querySelector<HTMLElement>('[data-unidad="segundos"]'),
+    };
+
+    const pintar = (el: HTMLElement | null, valor: number) => {
+      if (!el) return;
+      const texto = String(valor).padStart(2, '0');
+      // Solo tocamos el DOM si cambio: los segundos no deben repintar los dias.
+      if (el.textContent !== texto) el.textContent = texto;
+    };
+
+    const tic = () => {
+      const resto = objetivo - Date.now();
+
+      if (resto <= 0) {
+        bloque.hidden = true;
+        if (agotada) agotada.hidden = false;
+        clearInterval(reloj);
+        return;
+      }
+
+      const segundos = Math.floor(resto / 1000);
+      pintar(campos.dias, Math.floor(segundos / 86400));
+      pintar(campos.horas, Math.floor((segundos % 86400) / 3600));
+      pintar(campos.minutos, Math.floor((segundos % 3600) / 60));
+      pintar(campos.segundos, segundos % 60);
+    };
+
+    const reloj = setInterval(tic, 1000);
+    tic();
+  }
+</script>
+
+<style>
+  .cuenta__fecha {
+    margin-block-end: 1.6rem;
+    font-family: var(--f-titulo);
+    font-size: clamp(1.3rem, 5.5vw, 1.8rem);
+    text-align: center;
+    text-wrap: balance;
+    color: var(--c-texto);
+  }
+
+  .cuenta {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+  }
+
+  .cuenta__caja {
+    display: grid;
+    gap: 0.2rem;
+    padding-block: 0.9rem;
+    border: 1px solid rgba(243, 240, 234, 0.14);
+    border-radius: 0.9rem;
+    background: rgba(46, 77, 167, 0.22);
+    text-align: center;
+  }
+
+  .cuenta__numero {
+    font-family: var(--f-titulo);
+    font-size: clamp(1.5rem, 7vw, 2.1rem);
+    line-height: 1;
+    color: var(--c-oro);
+    /* Evita el temblor horizontal al cambiar de 1 a 8 cada segundo. */
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cuenta__etiqueta {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-texto-suave);
+  }
+
+  .cuenta__agotada {
+    margin-block-start: 1rem;
+    font-family: var(--f-titulo);
+    font-size: 1.6rem;
+    text-align: center;
+    color: var(--c-oro);
+  }
+</style>

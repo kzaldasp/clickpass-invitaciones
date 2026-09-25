@@ -1,0 +1,234 @@
+---
+import Panel from '../../../layouts/Panel.astro';
+import Icono from '../../../components/Icono.astro';
+import { guardarContenido, valoresContenido, type ValoresContenido } from '../../../lib/acciones/contenido';
+import { ponerAviso } from '../../../lib/aviso';
+import { etiquetaZona } from '../../../lib/fechas';
+import { manifiestoDe } from '../../../plantillas';
+
+const e = Astro.locals.evento!;
+const base = `/panel/${e.tokenPanel}`;
+const esAdmin = Astro.locals.usuario?.rol === 'admin';
+const m = manifiestoDe(e.plantilla);
+
+let v: ValoresContenido = valoresContenido(e);
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const r = await guardarContenido(e, await Astro.request.formData(), esAdmin);
+  if (r.ok) {
+    ponerAviso(Astro.cookies, 'Invitación guardada. Los links ya enviados muestran los cambios.');
+    return Astro.redirect(`${base}/invitacion`);
+  }
+  v = r.valores;
+  error = r.error;
+}
+
+const c = v.contenido;
+const lugares = [...c.lugares, { titulo: '', hora: '', nombre: '', direccion: '', mapa: '' }];
+---
+
+<Panel titulo="Mi invitación" angosto>
+  <header class="cabecera">
+    <div class="cabecera__texto">
+      <h1>Mi invitación</h1>
+      <p class="suave">Los textos que verán tus invitados. El diseño lo cuidamos nosotros.</p>
+    </div>
+    <a class="btn" href={`${base}/vista-previa`} target="_blank" rel="noopener"><Icono nombre="ojo" /> Vista previa</a>
+  </header>
+
+  {error && <p class="alerta alerta--peligro" style="margin-bottom:1.5rem">{error}</p>}
+
+  <form method="post" class="formulario" data-form-contenido>
+    <section class="seccion-form">
+      <div class="seccion-form__cabecera">
+        <h2>Portada</h2>
+        <p class="suave pequeno">Lo primero que ve el invitado.</p>
+      </div>
+      <div class="rejilla rejilla--2">
+        <label class="campo">
+          <span>Tipo de evento</span>
+          <input name="tipo" value={c.tipo} required maxlength="120" placeholder="Mis XV años" />
+        </label>
+        <label class="campo">
+          <span>Festejado(s)</span>
+          <input name="festejado" value={c.festejado.nombre} required maxlength="120" />
+        </label>
+        <label class="campo">
+          <span>Edad (opcional)</span>
+          <input name="edad" type="number" min="1" max="120" value={c.festejado.edad ?? ''} />
+        </label>
+        <label class="campo">
+          <span>Fecha y hora</span>
+          <input name="fechaLocal" type="datetime-local" value={v.fechaLocal} required />
+          <span class="campo__ayuda">Hora local del evento ({etiquetaZona(e.zonaHoraria)}).</span>
+        </label>
+        <label class="campo ancho-completo">
+          <span>Frase</span>
+          <input name="frase" value={c.frase ?? ''} maxlength="300" placeholder="Una frase corta que acompañe tu nombre" />
+        </label>
+      </div>
+    </section>
+
+    <section class="seccion-form">
+      <div class="seccion-form__cabecera">
+        <h2>Lugares</h2>
+        <p class="suave pequeno">Ceremonia, recepción, fiesta… en orden. Para quitar uno, deja vacío su nombre.</p>
+      </div>
+      <div class="pila">
+      <div class="pila" data-lugares>
+        {
+          lugares.map((l, i) => (
+            <div class="tarjeta lugar" data-lugar>
+              <div class="rejilla rejilla--2">
+                <label class="campo">
+                  <span>Título</span>
+                  <input name={`lugares.${i}.titulo`} value={l.titulo} placeholder="Ceremonia" />
+                </label>
+                <label class="campo">
+                  <span>Hora</span>
+                  <input name={`lugares.${i}.hora`} type="time" value={l.hora} />
+                </label>
+                <label class="campo">
+                  <span>Lugar</span>
+                  <input name={`lugares.${i}.nombre`} value={l.nombre} placeholder="Iglesia de San Francisco" />
+                </label>
+                <label class="campo">
+                  <span>Dirección</span>
+                  <input name={`lugares.${i}.direccion`} value={l.direccion} placeholder="Calle y número, ciudad" />
+                </label>
+                <label class="campo ancho-completo">
+                  <span>Link de Google Maps (opcional)</span>
+                  <input name={`lugares.${i}.mapa`} type="url" value={l.mapa ?? ''} placeholder="https://maps.app.goo.gl/…" />
+                </label>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+      <div>
+        <button type="button" class="btn btn--sm" data-agregar-lugar><Icono nombre="mas" /> Otro lugar</button>
+      </div>
+      </div>
+    </section>
+
+    <section class="seccion-form">
+      <div class="seccion-form__cabecera">
+        <h2>Detalles</h2>
+        <p class="suave pequeno">Todo es opcional.</p>
+      </div>
+      <div class="rejilla rejilla--2">
+        <label class="campo">
+          <span>Quienes invitan · título</span>
+          <input name="anfitrionesTitulo" value={c.anfitriones?.titulo ?? ''} placeholder="Con la bendición de" />
+        </label>
+        <label class="campo">
+          <span>Nombres (uno por línea)</span>
+          <textarea name="anfitriones" rows="3" placeholder={'Carlos Andrade\nLucía Ramírez'}>{c.anfitriones?.nombres.join('\n') ?? ''}</textarea>
+        </label>
+        <label class="campo">
+          <span>Código de vestimenta</span>
+          <input name="dressTitulo" value={c.dressCode?.titulo ?? ''} placeholder="Formal" />
+        </label>
+        <label class="campo">
+          <span>Nota de vestimenta</span>
+          <input name="dressNota" value={c.dressCode?.nota ?? ''} placeholder="Evitar el color blanco" />
+        </label>
+        <label class="campo ancho-completo">
+          <span>Despedida</span>
+          <input name="despedida" value={c.despedida ?? ''} maxlength="300" placeholder="¡Te esperamos!" />
+        </label>
+      </div>
+    </section>
+
+    {
+      m?.extras && m.extras.length > 0 && (
+        <section class="seccion-form">
+          <div class="seccion-form__cabecera">
+            <h2>Extras de {m.nombre}</h2>
+            <p class="suave pequeno">Campos propios de este diseño.</p>
+          </div>
+          <div class="rejilla rejilla--2">
+            {m.extras.map((x) => {
+              const valor = c.extras[x.clave];
+              const nombre = `extras.${x.clave}`;
+              return x.tipo === 'si_no' ? (
+                <label class="check">
+                  <input type="checkbox" name={nombre} checked={valor === true} />
+                  <span>{x.etiqueta}</span>
+                </label>
+              ) : (
+                <label class:list={['campo', { 'ancho-completo': x.tipo === 'texto_largo' }]}>
+                  <span>{x.etiqueta}</span>
+                  {x.tipo === 'texto_largo' ? (
+                    <textarea name={nombre} rows="3">{typeof valor === 'string' ? valor : ''}</textarea>
+                  ) : (
+                    <input name={nombre} type={x.tipo === 'numero' ? 'number' : 'text'} value={valor === undefined ? '' : String(valor)} />
+                  )}
+                  {x.ayuda && <span class="campo__ayuda">{x.ayuda}</span>}
+                </label>
+              );
+            })}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      esAdmin && (
+        <section class="seccion-form">
+          <div class="seccion-form__cabecera">
+            <h2>Fotos y música</h2>
+            <p class="suave pequeno">Solo admin. Sube archivos en la ficha del evento y pega aquí sus URLs.</p>
+          </div>
+          <div class="rejilla">
+            <label class="campo">
+              <span>Galería (una URL por línea)</span>
+              <textarea name="galeria" rows="4" class="mono">{c.galeria.join('\n')}</textarea>
+              <span class="campo__ayuda">La primera foto también es la imagen del link en WhatsApp.</span>
+            </label>
+            <div class="rejilla rejilla--2">
+              <label class="campo">
+                <span>Música (URL)</span>
+                <input name="musica" value={c.musica?.archivo ?? ''} class="mono" />
+              </label>
+              <label class="campo">
+                <span>Título de la canción</span>
+                <input name="musicaTitulo" value={c.musica?.titulo ?? ''} />
+              </label>
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    <div class="barra-guardar">
+      <a class="btn" href={`${base}/vista-previa`} target="_blank" rel="noopener">Vista previa</a>
+      <button type="submit" class="btn btn--primario">Guardar</button>
+    </div>
+  </form>
+</Panel>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-form-contenido]');
+  const contenedor = form?.querySelector<HTMLElement>('[data-lugares]');
+  form?.querySelector('[data-agregar-lugar]')?.addEventListener('click', () => {
+    if (!contenedor) return;
+    const filas = contenedor.querySelectorAll('[data-lugar]');
+    const nueva = filas[filas.length - 1].cloneNode(true) as HTMLElement;
+    nueva.querySelectorAll<HTMLInputElement>('[name]').forEach((campo) => {
+      campo.name = campo.name.replace(/^lugares\.\d+\./, `lugares.${filas.length}.`);
+      campo.value = '';
+    });
+    contenedor.append(nueva);
+    nueva.querySelector('input')?.focus();
+  });
+</script>
+
+<style>
+  .lugar {
+    padding: 1rem;
+    background: var(--superficie-2);
+    border-color: transparent;
+  }
+</style>

@@ -25,3 +25,5 @@ pnpm-debug.log*
 
 # base de datos local
 local.db*
+.dev.vars
+.wrangler/
